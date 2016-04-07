@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<block>
+  <name>Burst_Detection</name>
+  <key>collar_detect_Burst_Detection</key>
+  <category>collar_detect</category>
+  <import>import collar_detect</import>
+  <make>collar_detect.Burst_Detection($SNR)</make>
+  <param>
+    <name>SNR</name>
+    <key>SNR</key>
+    <type>float</type>
+  </param>
+
+  <sink>
+    <name>in</name>
+    <type>float</type>
+    <vlen>512</vlen>
+  </sink>
+</block>
