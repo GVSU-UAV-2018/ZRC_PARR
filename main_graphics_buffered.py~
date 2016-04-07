@@ -2,7 +2,7 @@ from wx.lib import sheet
 from math import hypot, sin, cos, pi
 import time
 import wx
-#import Serial_CRC
+import Serial_CRC
 import threading
 
 USE_BUFFERED_DC = True
@@ -460,7 +460,7 @@ def status_sender():
     global closing
     while closing == False:
         time.sleep(1.0/3.0)
-        #Serial_CRC.send_serial(direction, data_type, set_data, scanning)
+        Serial_CRC.send_serial(direction, data_type, set_data, scanning)
 
 def main():
 
@@ -471,16 +471,16 @@ def main():
     main.Maximize()
     main.Show()
     main.ShowMessage4()
-    #receiver = threading.Thread(target = Serial_CRC.receive_serial, args = (main.notebook.tabOne,))
-    #receiver.setDaemon(True)
-    #receiver.start()
-    #sender = threading.Thread(target = status_sender)
-    #sender.setDaemon(True)
-    #sender.start()
+    receiver = threading.Thread(target = Serial_CRC.receive_serial, args = (main.notebook.tabOne,))
+    receiver.setDaemon(True)
+    receiver.start()
+    sender = threading.Thread(target = status_sender)
+    sender.setDaemon(True)
+    sender.start()
     ex.MainLoop()
     time.sleep(2)
     closing = True
-    #Serial_CRC.ser_close()
+    Serial_CRC.ser_close()
 
 
 
