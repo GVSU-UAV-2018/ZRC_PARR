@@ -30,14 +30,14 @@ class SpreadSheet(sheet.CSheet):
         for i in range(5):
             self.SetRowSize(i, 20)
 
-########################################################################
+
 class TabPanel(wx.Panel):
     global total_scan_time
     global total_countdown_tmr
     global set_data
-    #----------------------------------------------------------------------
+
     def __init__(self, parent, tab_type, main_frame):
-        """"""
+
         font = wx.Font(15,style=wx.NORMAL,family=wx.MODERN,weight=wx.BOLD)
 
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
@@ -45,13 +45,11 @@ class TabPanel(wx.Panel):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         if tab_type == "control":
-
-
-        #Panel for feedback and control of system settigns
+            # Panel for feedback and control of system settings
             vbox = wx.BoxSizer(wx.VERTICAL)
 
             cs_vbox = wx.BoxSizer(wx.VERTICAL)
-            ##current settings
+            # current settings
             current_settings = wx.Panel(self, style=wx.SUNKEN_BORDER)
             current_settings.SetBackgroundColour('#FFFFD6')
 
@@ -76,7 +74,7 @@ class TabPanel(wx.Panel):
             current_settings.SetSizer(cs_vbox)
             vbox.Add(current_settings, proportion=1, flag=wx.EXPAND|wx.ALL)
 
-            ##configure settings
+            # configure settings
             cs2_vbox = wx.BoxSizer(wx.VERTICAL)
             cs2_hbox = wx.BoxSizer(wx.HORIZONTAL)
             configure_settings = wx.Panel(self, style=wx.SUNKEN_BORDER)
@@ -115,7 +113,7 @@ class TabPanel(wx.Panel):
             configure_settings.SetSizer(cs2_vbox)
             vbox.Add(configure_settings, proportion=1, flag=wx.EXPAND)
 
-            ##start and stop scan and timer settings
+            # start and stop scan and timer settings
             start_scan = wx.Panel(self, style=wx.SUNKEN_BORDER)
             start_scan.SetBackgroundColour('#FFFFD6')
 
@@ -127,7 +125,7 @@ class TabPanel(wx.Panel):
             gs3 = wx.GridSizer(1, 2, 5, 5)
             gs6 = wx.GridSizer(5, 1, 5, 5)
 
-            #start_btn.Bind(wx.EVT_BUTTON, self.StartTimer)
+            # start_btn.Bind(wx.EVT_BUTTON, self.StartTimer)
             self.timer = wx.Timer(self)
             self.Bind(wx.EVT_TIMER, self.update, self.timer)
             self.toggleBtn = wx.Button(start_scan, wx.ID_ANY, "Start")
@@ -157,7 +155,7 @@ class TabPanel(wx.Panel):
 
             hsizer.Add(vbox, 1, wx.EXPAND|wx.ALL|wx.CENTER)
 
-        #Panel for manual RDF assistance and feedback
+            # Panel for manual RDF assistance and feedback
             scan_assist = wx.Panel(self,style=wx.SUNKEN_BORDER)
             scan_assist.SetBackgroundColour('#E6E6E6')
             self.panel2 = Rotation_Assist(scan_assist)
@@ -177,7 +175,7 @@ class TabPanel(wx.Panel):
 
             hsizer.Add(scan_assist , 1, wx.ALL|wx.EXPAND)
 
-        #Panel for immediate scan results and feedback
+            # Panel for immediate scan results and feedback
             vbox3 = wx.BoxSizer(wx.VERTICAL)
             vbox4 = wx.BoxSizer(wx.VERTICAL)
             vbox_scan = wx.BoxSizer(wx.VERTICAL)
@@ -339,12 +337,12 @@ class Rotation_Assist(wx.Panel):
         # a file, or whatever.
         self._Buffer = wx.EmptyBitmap(*Size)
         #get panel size, so that circle can be drawn in the center
-        x,y = self.GetSize()
+        x, y = self.GetSize()
         dc = wx.BufferedPaintDC(self, self._Buffer)
         dc.BeginDrawing()
-        #brush = dc.SetBrush(wx.Brush('white', wx.SOLID))
+        # brush = dc.SetBrush(wx.Brush('white', wx.SOLID))
         dc.Clear()
-        #rotating guide line
+        # rotating guide line
         dc.SetPen(wx.Pen("green",style=wx.SOLID))
         dc.SetBrush(wx.Brush("white", wx.SOLID))
         center_x = x/2.0
