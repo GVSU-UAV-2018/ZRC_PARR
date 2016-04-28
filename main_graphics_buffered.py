@@ -15,18 +15,19 @@ total_scan_time = 40.0
 total_countdown_tmr = 5
 direction = "GS_to_RPI"
 data_type = "SETTINGS"
-set_data = [151.906e6,20.0,5.0]
+set_data = [151.906e6, 20.0, 5.0]
 scanning = False
 closing = False
 
-
+# Feeble attempt at doing continuous log
+# The row/columns for the scan results page
 class SpreadSheet(sheet.CSheet):
     def __init__(self, parent):
         sheet.CSheet.__init__(self, parent)
         self.row = self.col = 0
         self.SetNumberRows(5)
         self.SetNumberCols(8)
-
+        # Creates a 5x8 tab
         for i in range(5):
             self.SetRowSize(i, 20)
 
@@ -38,65 +39,68 @@ class TabPanel(wx.Panel):
 
     def __init__(self, parent, tab_type, main_frame):
 
-        font = wx.Font(15,style=wx.NORMAL,family=wx.MODERN,weight=wx.BOLD)
+        font = wx.Font(15, style=wx.NORMAL, family=wx.MODERN, weight=wx.BOLD)
 
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         if tab_type == "control":
-            # Panel for feedback and control of system settings
+            # Panel for feedback and control of system settings/ This is the entire panel which contains sys info detection settings and scan settings
             vbox = wx.BoxSizer(wx.VERTICAL)
-
+            #child of vbox
             cs_vbox = wx.BoxSizer(wx.VERTICAL)
-            # current settings
+# System Info is current settings --------------------------------------------------------------
+            # BoxSizer
+            #   Panel
+            #       Grid
+            #           Labels 3x2
             current_settings = wx.Panel(self, style=wx.SUNKEN_BORDER)
             current_settings.SetBackgroundColour('#FFFFD6')
-
+            # Creating static text objects for displaying text
             lbl1 = wx.StaticText(current_settings, -1, "SYSTEM INFO", style=wx.ALIGN_TOP)
             lbl1.SetFont(font)
-            cs_vbox.Add(lbl1, 0, wx.TOP|wx.LEFT, 20)
-
+            cs_vbox.Add(lbl1, 0, wx.TOP | wx.LEFT, 20) #add the label to the
+            # Creates a matrix 3x2 row, cols, v-gap, h-gap
             gs1 = wx.GridSizer(3, 2, 5, 5)
-
+            # make labels for system info displays
             self.meters = wx.StaticText(current_settings, label='meters')
             self.heading = wx.StaticText(current_settings, label='degrees')
             self.scan_freq = wx.StaticText(current_settings, label='MHz')
-
+            # Add all labels to the grid sizer
             gs1.AddMany([(wx.StaticText(current_settings, label='Altitude:'), 0, wx.EXPAND|wx.ALL),
-                (self.meters, 0, wx.EXPAND|wx.ALL),
+                (self.meters, 0, wx.EXPAND | wx.ALL),
                 (wx.StaticText(current_settings, label='Current Heading:'), 0, wx.EXPAND|wx.ALL),
-                (self.heading, 0, wx.EXPAND|wx.ALL),
+                (self.heading, 0, wx.EXPAND | wx.ALL),
                 (wx.StaticText(current_settings, label='Scan Frequency:'), 0, wx.EXPAND|wx.ALL),
-                (self.scan_freq, 0, wx.EXPAND|wx.ALL)])
-
+                (self.scan_freq, 0, wx.EXPAND | wx.ALL)])
+            #add the grid to the BoxSizer object
             cs_vbox.Add(gs1, 0, wx.ALL| wx.EXPAND, 20)
             current_settings.SetSizer(cs_vbox)
             vbox.Add(current_settings, proportion=1, flag=wx.EXPAND|wx.ALL)
-
+ # System Info Box Code END -----------------------------------------------------------------
             # configure settings
-            cs2_vbox = wx.BoxSizer(wx.VERTICAL)
-            cs2_hbox = wx.BoxSizer(wx.HORIZONTAL)
-            configure_settings = wx.Panel(self, style=wx.SUNKEN_BORDER)
+            cs2_vbox = wx.BoxSizer(wx.VERTICAL)     #BoxSizer for Detection Settings
+            configure_settings = wx.Panel(self, style=wx.SUNKEN_BORDER)  #Panel object for detection settings
             configure_settings.SetBackgroundColour('#C2D1B2')
-
+            #Labels
             lbl2 = wx.StaticText(configure_settings, -1, "DETECTION SETTINGS", style=wx.ALIGN_TOP)
             lbl2.SetFont(font)
             cs2_vbox.Add(lbl2, 0, wx.TOP|wx.LEFT, 20)
-
+            # Set all of the values for the inputs
             self.set_gain = wx.TextCtrl(configure_settings)
             self.set_gain.SetValue(str(set_data[0]))
             self.set_freq = wx.TextCtrl(configure_settings)
             self.set_freq.SetValue(str(set_data[1]))
             self.set_snr = wx.TextCtrl(configure_settings)
             self.set_snr.SetValue(str(set_data[2]))
-
+            #Grid sizers for label and input
             gs2_1 = wx.GridSizer(3, 1, 5, 5)
             gs2_2 = wx.GridSizer(3, 1, 5, 5)
             gs2_3 = wx.GridSizer(1, 3, 5, 5)
             set_btn = wx.Button(configure_settings, wx.ID_ANY, "Submit")
             set_btn.Bind(wx.EVT_BUTTON, self.set)
-
+            # Add to grid sizers
             gs2_1.AddMany([(wx.StaticText(configure_settings, label='Set Frequency (MHz):'), 0,wx.EXPAND|wx.ALL,15),
                 (wx.StaticText(configure_settings, label='Set Gain (dB):'), 0,wx.EXPAND|wx.ALL,15),
                 (wx.StaticText(configure_settings, label='Set SNR:'), 0, wx.EXPAND|wx.ALL,15)])
@@ -112,7 +116,7 @@ class TabPanel(wx.Panel):
             cs2_vbox.Add(gs2_3, 0, wx.ALL, 5)
             configure_settings.SetSizer(cs2_vbox)
             vbox.Add(configure_settings, proportion=1, flag=wx.EXPAND)
-
+#------------------ end of detection settings -----------------------------
             # start and stop scan and timer settings
             start_scan = wx.Panel(self, style=wx.SUNKEN_BORDER)
             start_scan.SetBackgroundColour('#FFFFD6')
@@ -151,19 +155,25 @@ class TabPanel(wx.Panel):
             start_vbox.Add(gs3, 0 ,wx.EXPAND|wx.ALL,5)
             start_scan.SetSizer(start_vbox)
             vbox.Add(start_scan, 1, wx.EXPAND|wx.ALL)
+#------Scan settings end
 
-
-            hsizer.Add(vbox, 1, wx.EXPAND|wx.ALL|wx.CENTER)
+            hsizer.Add(vbox, 1, wx.EXPAND|wx.ALL|wx.CENTER) #Direct child of tab control
+            ## hsizer - BoxSizer
+            #   scan_assist - Panel
+            #       sizer2 - BoxSizer (Kurt says this was probably to add border)
+            #           panel2 - Rotation_Assist(Panel)
 
             # Panel for manual RDF assistance and feedback
-            scan_assist = wx.Panel(self,style=wx.SUNKEN_BORDER)
+            # Middle box which displays compass/scan animation
+            scan_assist = wx.Panel(self, style=wx.SUNKEN_BORDER)
             scan_assist.SetBackgroundColour('#E6E6E6')
             self.panel2 = Rotation_Assist(scan_assist)
-            #panel2.SetBackgroundColour('#99FF99')
+            # panel2.SetBackgroundColour('#99FF99')
+            #
             sizer2 = wx.BoxSizer(wx.VERTICAL)
 
-            #lbl5 = wx.StaticText(scan_assist, -1, "NORTH", style=wx.ALIGN_CENTER)
-            #lbl5.SetFont(font)
+            # lbl5 = wx.StaticText(scan_assist, -1, "NORTH", style=wx.ALIGN_CENTER)
+            #  lbl5.SetFont(font)
             #sizer2.Add(lbl5, 1, wx.EXPAND|wx.ALL|wx.ALIGN_CENTER, 20)
             sizer2.Add(self.panel2, 1, wx.EXPAND|wx.ALL|wx.ALIGN_CENTER, 2)
 
@@ -174,6 +184,7 @@ class TabPanel(wx.Panel):
             scan_assist.SetSizer(sizer2)
 
             hsizer.Add(scan_assist , 1, wx.ALL|wx.EXPAND)
+#------------ End of Compass/Scan assitant
 
             # Panel for immediate scan results and feedback
             vbox3 = wx.BoxSizer(wx.VERTICAL)
@@ -202,6 +213,7 @@ class TabPanel(wx.Panel):
 
 
             vbox3.Add(gs4, proportion=1, flag=wx.EXPAND|wx.ALL)
+    #---End of Previos scan results
 
             current_scan = wx.Panel(self,style=wx.SUNKEN_BORDER)
             current_scan.SetBackgroundColour('#FFFFD6')
@@ -225,12 +237,12 @@ class TabPanel(wx.Panel):
 
 
             vbox4.Add(gs5, proportion=1, flag=wx.EXPAND|wx.LEFT)
-
+        #End of current scan results
             previous_scan.SetSizer(vbox3)
             current_scan.SetSizer(vbox4)
             vbox_scan.Add(previous_scan, 1, wx.EXPAND)
             vbox_scan.Add(current_scan, 1, wx.EXPAND)
-
+        #vbox_scan is parent control holding previous scan and current scan results
             hsizer.Add(vbox_scan, 1, wx.EXPAND)
 
         if tab_type == "results":
@@ -238,13 +250,13 @@ class TabPanel(wx.Panel):
             hsizer.Add(sheet, 1)
 
         self.SetSizer(hsizer)
-
+#Submit button handler for detection settings
     def set(self, event):
         global set_data
         set_data[0] =  float(self.set_gain.GetValue())
         set_data[1] =  float(self.set_freq.GetValue())
         set_data[2] =  float(self.set_snr.GetValue())
-
+#Submit button for scan settings
     def submit(self, event):
         global total_countdown_tmr
         global total_scan_time
@@ -255,13 +267,13 @@ class TabPanel(wx.Panel):
         self.set_countdown.SetValue(str(total_countdown_tmr))
         self.set_scanning.SetValue(str(total_scan_time))
         self.panel2.Refresh(eraseBackground=False)
-
-
+    #Start button handler
     def onToggle(self, event):
         global scanning_tmr
         global countdown_tmr
         global total_countdown_tmr
         btnLabel = self.toggleBtn.GetLabel()
+        #Shifts current scan results to previous scan results
         if btnLabel == "Start":
             self.timer.Start(1000)
             self.toggleBtn.SetLabel("Stop")
@@ -274,17 +286,22 @@ class TabPanel(wx.Panel):
             self.timer.Stop()
             self.toggleBtn.SetLabel("Start")
             self.panel2.Refresh(eraseBackground=False)
-
+    #Getting message from telmetry on separate thread
     def update_onreceive(self,rcvd_msg):
         global compass_angle
         global scanning
-        if(rcvd_msg.data_type == "SYS_INFO"):
+        # Upon receiving a detection packet AND system is not scanning, update the current scan results to show the most
+        # recent result from the pi.
+        # else
+        # Upon receiving a detection pack AND it IS scanning, clear current scan results
+        #
+        if(rcvd_msg.data_type == "SYS_INFO"): #Instance of RDF_Format data structure (Sys info packet
             self.scan_freq.SetLabel(str(rcvd_msg.data[0]) + " MHz")
             self.heading.SetLabel(str(rcvd_msg.data[1]) + " degrees")
             self.meters.SetLabel(str(rcvd_msg.data[2]) + " meters")
             compass_angle = rcvd_msg.data[1]
             self.panel2.Refresh(eraseBackground=False)
-        elif(rcvd_msg.data_type == "DETECTION"):
+        elif(rcvd_msg.data_type == "DETECTION"): #Detection packet
             if(scanning == 0):
                 self.current_degrees.SetLabel(str(rcvd_msg.data[0]) + " degrees")
                 self.current_power.SetLabel(str(rcvd_msg.data[1]))
@@ -295,7 +312,7 @@ class TabPanel(wx.Panel):
                 self.current_MHz.SetLabel('MHz')
         else:
             pass
-
+#Overall GUI timer
     def update(self, event):
         global scanning_tmr
         global total_scan_time
@@ -394,6 +411,7 @@ class Rotation_Assist(wx.Panel):
         del dc
 
 ########################################################################
+#Tab control which contains all tabs
 class Tabbed(wx.Notebook):
     """
     Notebook class
@@ -419,7 +437,7 @@ class Tabbed(wx.Notebook):
         tabTwo = TabPanel(self, "results", parent)
         self.AddPage(tabTwo, " Scan Results ")
 
-
+#Parent of tab panel (overall parent of GUI)
 class Main_Frame(wx.Frame):
 
     def InitUI(self):
@@ -453,6 +471,7 @@ class Main_Frame(wx.Frame):
         self.Close()
         Serial_CRC.ser_close()
 
+#When start button is pressed periodically send scanning status bit to pi so it knows to take data
 def status_sender():
     global set_data
     global closing

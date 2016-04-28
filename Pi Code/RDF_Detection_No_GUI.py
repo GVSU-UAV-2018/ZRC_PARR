@@ -26,9 +26,11 @@ import smbus
 import time
 import math
 import Adafruit_BMP.BMP085 as BMP085
-
+#sensor bus library for i2c for sensor for communication between pi processor and sensor
 bus = smbus.SMBus(1)
+#Address of BMP devices
 address = 0x1e
+#sensor is altimeter and compass
 sensor = BMP085.BMP085()
 
 
@@ -51,6 +53,7 @@ def read_word_2c(adr):
 def write_byte(adr, value):
     bus.write_byte_data(address, adr, value)
 
+#Configuring the sensor
 write_byte(0, 0b01110000) # Set to 8 samples @ 15Hz
 write_byte(1, 0b00100000) # 1.3 gain LSb / Gauss 1090 (default)
 write_byte(2, 0b00000000) # Continuous sampling
@@ -151,6 +154,7 @@ class RDF_Detection_No_GUI(gr.top_block):
 	self.fcdproplus_fcdproplus_0.set_freq(collar_freq - 3000)
 	self.fcdproplus_fcdproplus_0.set_if_gain(rcvd_msg.data[1])
 
+#Sending the status down to the ground (current heading (compass) and system info parameters)
 def status_sender(tb):
 	global collar_freq 
 	global gain
@@ -158,17 +162,22 @@ def status_sender(tb):
 	global bearing
 	while True:
 		time.sleep(.2)
-		y_out = (read_word_2c(3) - 180) * scale
+        #reading for memory locations 3,7,4
+        #180 and 709 are currently hardcoded calibrations of compass offsets with Kurt's setup
+		y_out = (read_word_2c(3) - 180) * scale #y and x are uav plane
 		x_out = (read_word_2c(7) + 709) * scale
 		z_out = read_word_2c(5) * scale
 		
 		bearing  = math.atan2(y_out, x_out) - .1745329 
 		if (bearing < 0):
-	    		bearing += 2 * math.pi
-		
+	    	bearing += 2 * math.pi
+		# If not scanning (scanning = 0) it sends most recent detection or sends empty data upon initialization
 		if(scanning == 0):
 			detection = tb.collar_detect_Burst_Detection_0.get_detection()
 			Serial_CRC.send_serial("RPI_to_GS","DETECTION",[detection[1] - 178.0,detection[0],collar_freq])#swapped i for collar_freq
+        #So if math.degrees(bearing) is 2 degrees then the UAV is pointed south
+        #This will change if the position of the compass changes orientation
+        #Always sends system info
 		Serial_CRC.send_serial("RPI_to_GS","SYS_INFO",[collar_freq ,(math.degrees(bearing) - 178.0),sensor.read_altitude()])
 
 if __name__ == '__main__':

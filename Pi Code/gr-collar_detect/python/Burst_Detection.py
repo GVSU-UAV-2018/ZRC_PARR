@@ -100,10 +100,10 @@ class Burst_Detection(gr.sync_block):
 			detection_mag = numpy.linalg.norm(v_avg)
 			detection_ang = numpy.arctan2(v_avg[1],v_avg[0]) 
 			if (detection_ang < 0):
-	    			detection_ang += 2 * math.pi
-			detection_ang = math.degrees(detection_ang)
-			detection = numpy.array([detection_mag, detection_ang])
-			prv_scanning = self.scanning
+	    		detection_ang += 2 * math.pi
+				detection_ang = math.degrees(detection_ang)
+				detection = numpy.array([detection_mag, detection_ang])
+				prv_scanning = self.scanning
 		else:
 			prv_scanning = self.scanning	
 		if(self.scanning == 1):
