@@ -6,7 +6,6 @@
 ##################################################
 
 from gnuradio import blocks
-from gnuradio import eng_notation
 from gnuradio import fft
 from gnuradio import filter
 from gnuradio import gr
@@ -16,11 +15,7 @@ from gnuradio.filter import firdes
 from optparse import OptionParser
 import collar_detect
 import fcdproplus
-import sip
-import sys
 import Serial_CRC
-import serial
-import time
 import threading
 import smbus
 import time
@@ -74,9 +69,9 @@ class RDF_Detection_No_GUI(gr.top_block):
         ##################################################
         # Variables
         ##################################################
-	global collar_freq 
-	global gain
-	global SNR
+        global collar_freq
+        global gain
+        global SNR
         self.samp_rate = samp_rate = 192000
         self.gain = gain
         self.collar_freq = collar_freq 
@@ -141,18 +136,18 @@ class RDF_Detection_No_GUI(gr.top_block):
         return self.SNR
 
     def set_SNR(self, snr):
-	global SNR
-        SNR = snr
-	print SNR
+        global SNR
+            SNR = snr
+        print SNR
 	
     def update_vars(self, rcvd_msg):
-	global bearing_deg
-	global collar_freq
-	collar_freq = rcvd_msg.data[0]
-	self.collar_detect_Burst_Detection_0.update_SNR(rcvd_msg.data[2])
-	self.collar_detect_Burst_Detection_0.update_scanning(rcvd_msg.scanning,bearing)
-	self.fcdproplus_fcdproplus_0.set_freq(collar_freq - 3000)
-	self.fcdproplus_fcdproplus_0.set_if_gain(rcvd_msg.data[1])
+        global bearing_deg
+        global collar_freq
+        collar_freq = rcvd_msg.data[0]
+        self.collar_detect_Burst_Detection_0.update_SNR(rcvd_msg.data[2])
+        self.collar_detect_Burst_Detection_0.update_scanning(rcvd_msg.scanning,bearing)
+        self.fcdproplus_fcdproplus_0.set_freq(collar_freq - 3000)
+        self.fcdproplus_fcdproplus_0.set_if_gain(rcvd_msg.data[1])
 
 #Sending the status down to the ground (current heading (compass) and system info parameters)
 def status_sender(tb):
@@ -162,11 +157,10 @@ def status_sender(tb):
 	global bearing
 	while True:
 		time.sleep(.2)
-        #reading for memory locations 3,7,4
+        #reading for memory locations 3,7
         #180 and 709 are currently hardcoded calibrations of compass offsets with Kurt's setup
 		y_out = (read_word_2c(3) - 180) * scale #y and x are uav plane
 		x_out = (read_word_2c(7) + 709) * scale
-		z_out = read_word_2c(5) * scale
 		
 		bearing  = math.atan2(y_out, x_out) - .1745329 
 		if (bearing < 0):
