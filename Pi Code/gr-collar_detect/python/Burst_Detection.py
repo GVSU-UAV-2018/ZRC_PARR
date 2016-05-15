@@ -53,7 +53,7 @@ class Burst_Detection(gr.sync_block):
 		self.SNR = SNR
 		self.scanning = 0
 
-    def update_SNR(self,SNR):
+    def update_snr(self, SNR):
 		self.SNR = SNR
 
     def update_scanning(self,scanning,bearing):

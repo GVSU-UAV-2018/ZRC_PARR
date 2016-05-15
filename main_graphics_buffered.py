@@ -1,5 +1,6 @@
 from wx.lib import sheet
 from math import hypot, sin, cos, pi
+import gui
 import time
 import wx
 #import Serial_CRC
@@ -39,7 +40,7 @@ class TabPanel(wx.Panel):
 
     def __init__(self, parent, tab_type, main_frame):
 
-        font = wx.Font(15, style=wx.NORMAL, family=wx.MODERN, weight=wx.BOLD)
+        title_font = wx.Font(15, style=wx.NORMAL, family=wx.MODERN, weight=wx.BOLD)
 
         wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
 
@@ -49,35 +50,10 @@ class TabPanel(wx.Panel):
             # Panel for feedback and control of system settings/ This is the entire panel which contains sys info detection settings and scan settings
             vbox = wx.BoxSizer(wx.VERTICAL)
             #child of vbox
-            cs_vbox = wx.BoxSizer(wx.VERTICAL)
-# System Info is current settings --------------------------------------------------------------
-            # BoxSizer
-            #   Panel
-            #       Grid
-            #           Labels 3x2
-            current_settings = wx.Panel(self, style=wx.SUNKEN_BORDER)
-            current_settings.SetBackgroundColour('#FFFFD6')
-            # Creating static text objects for displaying text
-            lbl1 = wx.StaticText(current_settings, -1, "SYSTEM INFO", style=wx.ALIGN_TOP)
-            lbl1.SetFont(font)
-            cs_vbox.Add(lbl1, 0, wx.TOP | wx.LEFT, 20) #add the label to the
-            # Creates a matrix 3x2 row, cols, v-gap, h-gap
-            gs1 = wx.GridSizer(3, 2, 5, 5)
-            # make labels for system info displays
-            self.meters = wx.StaticText(current_settings, label='meters')
-            self.heading = wx.StaticText(current_settings, label='degrees')
-            self.scan_freq = wx.StaticText(current_settings, label='MHz')
-            # Add all labels to the grid sizer
-            gs1.AddMany([(wx.StaticText(current_settings, label='Altitude:'), 0, wx.EXPAND|wx.ALL),
-                (self.meters, 0, wx.EXPAND | wx.ALL),
-                (wx.StaticText(current_settings, label='Current Heading:'), 0, wx.EXPAND|wx.ALL),
-                (self.heading, 0, wx.EXPAND | wx.ALL),
-                (wx.StaticText(current_settings, label='Scan Frequency:'), 0, wx.EXPAND|wx.ALL),
-                (self.scan_freq, 0, wx.EXPAND | wx.ALL)])
-            #add the grid to the BoxSizer object
-            cs_vbox.Add(gs1, 0, wx.ALL| wx.EXPAND, 20)
-            current_settings.SetSizer(cs_vbox)
-            vbox.Add(current_settings, proportion=1, flag=wx.EXPAND|wx.ALL)
+            sys_info = gui.SystemInfoCtrl(self, style=wx.SUNKEN_BORDER)
+            sys_info.set_title_font(title_font)
+            vbox.Add(sys_info, proportion=1, flag=wx.EXPAND | wx.ALL)
+
  # System Info Box Code END -----------------------------------------------------------------
             # configure settings
             cs2_vbox = wx.BoxSizer(wx.VERTICAL)     #BoxSizer for Detection Settings
@@ -85,7 +61,7 @@ class TabPanel(wx.Panel):
             configure_settings.SetBackgroundColour('#C2D1B2')
             #Labels
             lbl2 = wx.StaticText(configure_settings, -1, "DETECTION SETTINGS", style=wx.ALIGN_TOP)
-            lbl2.SetFont(font)
+            lbl2.SetFont(title_font)
             cs2_vbox.Add(lbl2, 0, wx.TOP|wx.LEFT, 20)
             # Set all of the values for the inputs
             self.set_gain = wx.TextCtrl(configure_settings)
@@ -122,7 +98,7 @@ class TabPanel(wx.Panel):
             start_scan.SetBackgroundColour('#FFFFD6')
 
             start_lbl = wx.StaticText(start_scan, -1, "SCAN SETTINGS", style=wx.ALIGN_TOP)
-            start_lbl.SetFont(font)
+            start_lbl.SetFont(title_font)
             start_vbox = wx.BoxSizer(wx.VERTICAL)
             start_vbox.Add(start_lbl, 0, wx.TOP|wx.LEFT, 20)
 
@@ -195,7 +171,7 @@ class TabPanel(wx.Panel):
             previous_scan.SetBackgroundColour('#C2D1B2')
 
             lbl3 = wx.StaticText(previous_scan, -1, "PREVIOUS SCAN RESULTS", style=wx.ALIGN_TOP)
-            lbl3.SetFont(font)
+            lbl3.SetFont(title_font)
             vbox3.Add(lbl3, 0, wx.TOP|wx.LEFT, 20)
 
             self.previous_degrees = wx.StaticText(previous_scan, label='degrees')
@@ -219,7 +195,7 @@ class TabPanel(wx.Panel):
             current_scan.SetBackgroundColour('#FFFFD6')
 
             lbl4 = wx.StaticText(current_scan, -1, "CURRENT SCAN RESULTS", style=wx.ALIGN_TOP)
-            lbl4.SetFont(font)
+            lbl4.SetFont(title_font)
             vbox4.Add(lbl4, 0, wx.TOP|wx.LEFT, 20)
 
             gs5 = wx.GridSizer(3, 2, 5, 5)
