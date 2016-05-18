@@ -37,13 +37,19 @@ class SysInfoForm(wx.Panel):
         raise NotImplementedError
 
     def set_frequency(self, freq):
-        self.frequencyValue.SetLabelText(str(freq).join(" MHz"))
+        try:
+            self.frequencyValue.SetLabel("This is a test")
+            #self.frequencyValue.SetLabelText(freq.join(" MHz"))
+        except Exception as ex:
+            print str(ex)
+            raise
+
 
     def set_heading(self, angle):
-        self.headingValue.SetLabelText(str(angle).join(" degrees"))
+        self.headingValue.SetLabelText(angle.join(" degrees"))
 
     def set_altitude(self, altitude):
-        self.altitudeValue.SetLabelText(str(altitude).join(" meters"))
+        self.altitudeValue.SetLabelText(altitude.join(" meters"))
 
     def set_title_font(self, font):
         self.title_label.SetFont(font)

@@ -13,7 +13,7 @@ PROTOCOL_DLE = '\x90'
 
 # configure the serial connections (the parameters differs on the device you are connecting to)
 ser = serial.Serial(
-    port='COM10',
+    port='/dev/ttyUSB0',
     baudrate=57600,
     stopbits=serial.STOPBITS_ONE,
     bytesize=serial.EIGHTBITS,
@@ -86,11 +86,14 @@ def receive_serial(panel):
                     print 'Error: CRC mismatch'
                 else:
                     rcvd_msg = message_format.parse(rec_msg)
-                    #print "Data Received"
+                    print "Data Received"
                     panel.update_onreceive(rcvd_msg)
                 msg = ''
-        except:
-            pass
+        except Exception as ex:
+            import sys
+            print str(ex)
+            print "Unexpected error:", sys.exc_info()[0]
+            raise
 
 def ser_close():
     closing = True

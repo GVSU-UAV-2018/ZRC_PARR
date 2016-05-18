@@ -3,7 +3,7 @@ from math import hypot, sin, cos, pi
 import gui
 import time
 import wx
-#import Serial_CRC
+import Serial_CRC
 import threading
 
 USE_BUFFERED_DC = True
@@ -50,9 +50,9 @@ class TabPanel(wx.Panel):
             # Panel for feedback and control of system settings/ This is the entire panel which contains sys info detection settings and scan settings
             vbox = wx.BoxSizer(wx.VERTICAL)
             #child of vbox
-            sys_info = gui.SystemInfoCtrl(self, style=wx.SUNKEN_BORDER)
-            sys_info.set_title_font(title_font)
-            vbox.Add(sys_info, proportion=1, flag=wx.EXPAND | wx.ALL)
+            self.sys_info = gui.SystemInfoCtrl(self, style=wx.SUNKEN_BORDER)
+            self.sys_info.set_title_font(title_font)
+            vbox.Add(self.sys_info, proportion=1, flag=wx.EXPAND | wx.ALL)
 
  # System Info Box Code END -----------------------------------------------------------------
             # configure settings
@@ -262,6 +262,7 @@ class TabPanel(wx.Panel):
             self.timer.Stop()
             self.toggleBtn.SetLabel("Start")
             self.panel2.Refresh(eraseBackground=False)
+
     #Getting message from telmetry on separate thread
     def update_onreceive(self,rcvd_msg):
         global compass_angle
@@ -272,20 +273,20 @@ class TabPanel(wx.Panel):
         # Upon receiving a detection pack AND it IS scanning, clear current scan results
         #
         if(rcvd_msg.data_type == "SYS_INFO"): #Instance of RDF_Format data structure (Sys info packet
-            self.scan_freq.SetLabel(str(rcvd_msg.data[0]) + " MHz")
-            self.heading.SetLabel(str(rcvd_msg.data[1]) + " degrees")
-            self.meters.SetLabel(str(rcvd_msg.data[2]) + " meters")
+            self.sys_info.set_frequency(str(rcvd_msg.data[0]))
+            self.sys_info.set_heading(str(rcvd_msg.data[1]))
+            self.sys_info.set_altitude(str(rcvd_msg.data[2]))
             compass_angle = rcvd_msg.data[1]
             self.panel2.Refresh(eraseBackground=False)
         elif(rcvd_msg.data_type == "DETECTION"): #Detection packet
             if(scanning == 0):
-                self.current_degrees.SetLabel(str(rcvd_msg.data[0]) + " degrees")
-                self.current_power.SetLabel(str(rcvd_msg.data[1]))
-                self.current_MHz.SetLabel(str(rcvd_msg.data[2]) + " MHz")
+                self.sys_info.set_frequency(str(rcvd_msg.data[0]))
+                self.sys_info.set_heading(str(rcvd_msg.data[1]))
+                self.sys_info.set_altitude(str(rcvd_msg.data[2]))
             else:
-                self.current_degrees.SetLabel('degrees')
-                self.current_power.SetLabel(' ')
-                self.current_MHz.SetLabel('MHz')
+                self.sys_info.set_frequency('')
+                self.sys_info.set_heading('')
+                self.sys_info.set_altitude('')
         else:
             pass
 #Overall GUI timer
@@ -453,7 +454,7 @@ def status_sender():
     global closing
     while closing == False:
         time.sleep(1.0/3.0)
-        #Serial_CRC.send_serial(direction, data_type, set_data, scanning)
+        Serial_CRC.send_serial(direction, data_type, set_data, scanning)
 
 def main():
 
@@ -464,16 +465,16 @@ def main():
     main.Maximize()
     main.Show()
     main.ShowMessage4()
-    #receiver = threading.Thread(target = Serial_CRC.receive_serial, args = (main.notebook.tabOne,))
-    #receiver.setDaemon(True)
-    #receiver.start()
-    #sender = threading.Thread(target = status_sender)
-    #sender.setDaemon(True)
-    #sender.start()
+    receiver = threading.Thread(target=Serial_CRC.receive_serial, args=(main.notebook.tabOne,))
+    receiver.setDaemon(True)
+    receiver.start()
+    sender = threading.Thread(target = status_sender)
+    sender.setDaemon(True)
+    sender.start()
     ex.MainLoop()
     time.sleep(2)
-    closing = True
-    #Serial_CRC.ser_close()
+    #closing = True
+    Serial_CRC.ser_close()
 
 
 
