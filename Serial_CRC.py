@@ -87,7 +87,7 @@ def receive_serial(panel):
                 else:
                     rcvd_msg = message_format.parse(rec_msg)
                     print "Data Received"
-                    panel.update_onreceive(rcvd_msg)
+                    panel.update_on_receive(rcvd_msg)
                 msg = ''
         except Exception as ex:
             import sys

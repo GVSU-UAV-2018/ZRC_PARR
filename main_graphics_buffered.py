@@ -52,6 +52,7 @@ class TabPanel(wx.Panel):
             #child of vbox
             self.sys_info = gui.SystemInfoCtrl(self, style=wx.SUNKEN_BORDER)
             self.sys_info.set_title_font(title_font)
+            self.sys_info.set_frequency("this is a test")
             vbox.Add(self.sys_info, proportion=1, flag=wx.EXPAND | wx.ALL)
 
  # System Info Box Code END -----------------------------------------------------------------
@@ -264,29 +265,44 @@ class TabPanel(wx.Panel):
             self.panel2.Refresh(eraseBackground=False)
 
     #Getting message from telmetry on separate thread
-    def update_onreceive(self,rcvd_msg):
+    def update_on_receive(self, rcvd_msg):
         global compass_angle
-        global scanning
+        global scanning1
         # Upon receiving a detection packet AND system is not scanning, update the current scan results to show the most
         # recent result from the pi.
         # else
         # Upon receiving a detection pack AND it IS scanning, clear current scan results
         #
         if(rcvd_msg.data_type == "SYS_INFO"): #Instance of RDF_Format data structure (Sys info packet
-            self.sys_info.set_frequency(str(rcvd_msg.data[0]))
-            self.sys_info.set_heading(str(rcvd_msg.data[1]))
-            self.sys_info.set_altitude(str(rcvd_msg.data[2]))
+            update_evt = gui.UpdateSysInfoEvent()
+            update_evt.frequency = rcvd_msg.data[0]
+            update_evt.heading = rcvd_msg.data[1]
+            update_evt.altitude = rcvd_msg.data[2]
+            wx.PostEvent(self.sys_info, update_evt)
+            # self.sys_info.set_frequency(str(rcvd_msg.data[0]))
+            # self.sys_info.set_heading(str(rcvd_msg.data[1]))
+            # self.sys_info.set_altitude(str(rcvd_msg.data[2]))
             compass_angle = rcvd_msg.data[1]
             self.panel2.Refresh(eraseBackground=False)
         elif(rcvd_msg.data_type == "DETECTION"): #Detection packet
             if(scanning == 0):
-                self.sys_info.set_frequency(str(rcvd_msg.data[0]))
-                self.sys_info.set_heading(str(rcvd_msg.data[1]))
-                self.sys_info.set_altitude(str(rcvd_msg.data[2]))
+                update_evt = gui.UpdateSysInfoEvent()
+                update_evt.frequency = rcvd_msg.data[0]
+                update_evt.heading = rcvd_msg.data[1]
+                update_evt.altitude = rcvd_msg.data[2]
+                wx.PostEvent(self.sys_info, update_evt)
+                # self.sys_info.set_frequency(str(rcvd_msg.data[0]))
+                # self.sys_info.set_heading(str(rcvd_msg.data[1]))
+                # self.sys_info.set_altitude(str(rcvd_msg.data[2]))
             else:
-                self.sys_info.set_frequency('')
-                self.sys_info.set_heading('')
-                self.sys_info.set_altitude('')
+                update_evt = gui.UpdateSysInfoEvent()
+                update_evt.frequency = ' '
+                update_evt.heading = ' '
+                update_evt.altitude = ' '
+                wx.PostEvent(self.sys_info, update_evt)
+                # self.sys_info.set_frequency('')
+                # self.sys_info.set_heading('')
+                # self.sys_info.set_altitude('')
         else:
             pass
 #Overall GUI timer

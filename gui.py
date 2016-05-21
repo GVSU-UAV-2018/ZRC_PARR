@@ -1,7 +1,8 @@
 import wx
+import wx.lib.newevent
 import logging
 
-
+UpdateSysInfoEvent, EVT_UPDATE_SYSINFO = wx.lib.newevent.NewEvent()
 
 class SysInfoForm(wx.Panel):
     """ Base form class for System Info controls that
@@ -29,6 +30,7 @@ class SysInfoForm(wx.Panel):
 
     def bind_events(self):
         """ Bind events for the control """
+        self.Bind(EVT_UPDATE_SYSINFO, self.on_update_sysinfo)
 
     def do_layout(self):
         """ Layout the controls that were created by createControls().
@@ -36,23 +38,30 @@ class SysInfoForm(wx.Panel):
             is the responsibility of subclasses to layout the controls """
         raise NotImplementedError
 
-    def set_frequency(self, freq):
-        try:
-            self.frequencyValue.SetLabel("This is a test")
-            #self.frequencyValue.SetLabelText(freq.join(" MHz"))
-        except Exception as ex:
-            print str(ex)
-            raise
-
+    def set_altitude(self, altitude):
+        if altitude is not None:
+            label = str(altitude) + ' meters'
+            self.altitudeValue.SetLabel(label)
 
     def set_heading(self, angle):
-        self.headingValue.SetLabelText(angle.join(" degrees"))
+        if angle is not None:
+            label = str(angle) + ' degrees'
+            self.headingValue.SetLabel(label)
 
-    def set_altitude(self, altitude):
-        self.altitudeValue.SetLabelText(altitude.join(" meters"))
+    def set_frequency(self, freq):
+        if freq is not None:
+            label = str(freq) + ' MHz'
+            self.frequencyValue.SetLabel(label)
 
     def set_title_font(self, font):
         self.title_label.SetFont(font)
+
+    def on_update_sysinfo(self, evt):
+        None
+        # self.set_altitude(evt.altitude)
+        # self.set_heading(evt.heading)
+        # self.set_frequency(evt.frequency)
+
 
 class SystemInfoCtrl(SysInfoForm):
 
