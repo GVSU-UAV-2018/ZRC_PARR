@@ -52,7 +52,6 @@ class TabPanel(wx.Panel):
             #child of vbox
             self.sys_info = gui.SystemInfoCtrl(self, style=wx.SUNKEN_BORDER)
             self.sys_info.set_title_font(title_font)
-            self.sys_info.set_frequency("this is a test")
             vbox.Add(self.sys_info, proportion=1, flag=wx.EXPAND | wx.ALL)
 
  # System Info Box Code END -----------------------------------------------------------------
@@ -129,12 +128,12 @@ class TabPanel(wx.Panel):
             gs3.AddMany([(self.toggleBtn, 0,wx.EXPAND|wx.ALL,5),
             (gs6, 0, wx.EXPAND|wx.ALL,5)])
 
-            start_vbox.Add(gs3, 0 ,wx.EXPAND|wx.ALL,5)
+            start_vbox.Add(gs3, 0, wx.EXPAND | wx.ALL, 5)
             start_scan.SetSizer(start_vbox)
             vbox.Add(start_scan, 1, wx.EXPAND|wx.ALL)
 #------Scan settings end
 
-            hsizer.Add(vbox, 1, wx.EXPAND|wx.ALL|wx.CENTER) #Direct child of tab control
+            hsizer.Add(vbox, 1, wx.EXPAND | wx.ALL | wx.CENTER) #Direct child of tab control
             ## hsizer - BoxSizer
             #   scan_assist - Panel
             #       sizer2 - BoxSizer (Kurt says this was probably to add border)
@@ -274,11 +273,14 @@ class TabPanel(wx.Panel):
         # Upon receiving a detection pack AND it IS scanning, clear current scan results
         #
         if(rcvd_msg.data_type == "SYS_INFO"): #Instance of RDF_Format data structure (Sys info packet
-            update_evt = gui.UpdateSysInfoEvent()
-            update_evt.frequency = rcvd_msg.data[0]
-            update_evt.heading = rcvd_msg.data[1]
-            update_evt.altitude = rcvd_msg.data[2]
-            wx.PostEvent(self.sys_info, update_evt)
+            # update_evt = gui.UpdateSysInfoEvent()
+            self.sys_info.frequency = rcvd_msg.data[0]
+            self.sys_info.heading = rcvd_msg.data[1]
+            self.sys_info.altitude = rcvd_msg.data[2]
+            # update_evt.frequency = rcvd_msg.data[0]
+            # update_evt.heading = rcvd_msg.data[1]
+            # update_evt.altitude = rcvd_msg.data[2]
+            # wx.PostEvent(self.sys_info, update_evt)
             # self.sys_info.set_frequency(str(rcvd_msg.data[0]))
             # self.sys_info.set_heading(str(rcvd_msg.data[1]))
             # self.sys_info.set_altitude(str(rcvd_msg.data[2]))
@@ -286,11 +288,14 @@ class TabPanel(wx.Panel):
             self.panel2.Refresh(eraseBackground=False)
         elif(rcvd_msg.data_type == "DETECTION"): #Detection packet
             if(scanning == 0):
-                update_evt = gui.UpdateSysInfoEvent()
-                update_evt.frequency = rcvd_msg.data[0]
-                update_evt.heading = rcvd_msg.data[1]
-                update_evt.altitude = rcvd_msg.data[2]
-                wx.PostEvent(self.sys_info, update_evt)
+                self.sys_info.frequency = rcvd_msg.data[0]
+                self.sys_info.heading = rcvd_msg.data[1]
+                self.sys_info.altitude = rcvd_msg.data[2]
+                # update_evt = gui.UpdateSysInfoEvent()
+                # update_evt.frequency = rcvd_msg.data[0]
+                # update_evt.heading = rcvd_msg.data[1]
+                # update_evt.altitude = rcvd_msg.data[2]
+                # wx.PostEvent(self.sys_info, update_evt)
                 # self.sys_info.set_frequency(str(rcvd_msg.data[0]))
                 # self.sys_info.set_heading(str(rcvd_msg.data[1]))
                 # self.sys_info.set_altitude(str(rcvd_msg.data[2]))
@@ -299,7 +304,7 @@ class TabPanel(wx.Panel):
                 update_evt.frequency = ' '
                 update_evt.heading = ' '
                 update_evt.altitude = ' '
-                wx.PostEvent(self.sys_info, update_evt)
+                # wx.PostEvent(self.sys_info, update_evt)
                 # self.sys_info.set_frequency('')
                 # self.sys_info.set_heading('')
                 # self.sys_info.set_altitude('')
