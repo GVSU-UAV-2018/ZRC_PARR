@@ -98,7 +98,7 @@ class DetectionSettingsForm(wx.Panel):
         self.gain_label = wx.StaticText(parent=self, label='Set Gain (dB):')
         self.gain_input = wx.TextCtrl(parent=self)
         self.snr_label = wx.StaticText(parent=self, label='Set SNR:')
-        self.snr_input = wx.StaticText(parent=self)
+        self.snr_input = wx.TextCtrl(parent=self)
         self.submit_button = wx.Button(parent=self, id=wx.ID_ANY, label="Submit")
 
     def bind_events(self):
@@ -131,12 +131,29 @@ class DetectionSettingsCtrl(DetectionSettingsForm):
         # top level container
         top_sizer = wx.BoxSizer(wx.VERTICAL)
         top_sizer.Add(item=self.title_label, proportion=0, flag=wx.TOP | wx.LEFT, border=20)
+
         # grid holding input controls and their labels
-        input_grid = wx.GridSizer(rows=3, cols=2, vgap=5, hgap=5)
-        input_grid.AddMany(items=[self.frequency_label, self.frequency_input,
-                                  self.gain_label, self.gain_input,
-                                  self.snr_label, self.snr_input])
+        label_grid = wx.GridSizer(rows=3, cols=1, vgap=5, hgap=5)
+        input_grid = wx.GridSizer(rows=3, cols=1, vgap=5, hgap=5)
+        container_grid = wx.GridSizer(rows=1, cols=3, vgap=5, hgap=5)
+
+        # Adding wx.Sizer items (item, proportion, flag, border)
+        flags = wx.EXPAND | wx.ALL
+        proportion = 0
+        lbl_border = 15
+        label_grid.AddMany(items=[(self.frequency_label, proportion, flags, lbl_border),
+                                  (self.gain_label, proportion, flags, lbl_border),
+                                  (self.snr_label, proportion, flags, lbl_border)])
+
+        border = 5
+        input_grid.AddMany(items=[(self.frequency_input, proportion, flags, border),
+                                  (self.gain_input, proportion, flags, border),
+                                  (self.snr_input, proportion, flags, border)])
+        container_grid.AddMany(items=[(label_grid, proportion, flags),
+                                      (input_grid, proportion, flags),
+                                      (self.submit_button, proportion, flags)])
+
         # outer container holding input and submit button
-        input_container = wx.GridSizer(rows=1, cols=2, vgap=5, hgap=5)
-        input_container.AddMany(items=[input_grid, self.submit_button])
-        top_sizer.Add(item=input_container)
+        top_sizer.Add(container_grid, proportion, wx.ALL, border)
+        self.SetSizer(top_sizer)
+
