@@ -50,48 +50,52 @@ class TabPanel(wx.Panel):
             # Panel for feedback and control of system settings/ This is the entire panel which contains sys info detection settings and scan settings
             vbox = wx.BoxSizer(wx.VERTICAL)
             #child of vbox
-            self.sys_info = gui.SystemInfoCtrl(self, style=wx.SUNKEN_BORDER)
+            self.sys_info = gui.SystemInfoCtrl(parent=self, style=wx.SUNKEN_BORDER)
             self.sys_info.set_title_font(title_font)
-            vbox.Add(self.sys_info, proportion=1, flag=wx.EXPAND | wx.ALL)
+            vbox.Add(item=self.sys_info, proportion=1, flag=wx.EXPAND | wx.ALL)
 
  # System Info Box Code END -----------------------------------------------------------------
             # configure settings
-            cs2_vbox = wx.BoxSizer(wx.VERTICAL)     #BoxSizer for Detection Settings
-            configure_settings = wx.Panel(self, style=wx.SUNKEN_BORDER)  #Panel object for detection settings
-            configure_settings.SetBackgroundColour('#C2D1B2')
-            #Labels
-            lbl2 = wx.StaticText(configure_settings, -1, "DETECTION SETTINGS", style=wx.ALIGN_TOP)
-            lbl2.SetFont(title_font)
-            cs2_vbox.Add(lbl2, 0, wx.TOP|wx.LEFT, 20)
-            # Set all of the values for the inputs
-            self.set_gain = wx.TextCtrl(configure_settings)
-            self.set_gain.SetValue(str(set_data[0]))
-            self.set_freq = wx.TextCtrl(configure_settings)
-            self.set_freq.SetValue(str(set_data[1]))
-            self.set_snr = wx.TextCtrl(configure_settings)
-            self.set_snr.SetValue(str(set_data[2]))
-            #Grid sizers for label and input
-            gs2_1 = wx.GridSizer(3, 1, 5, 5)
-            gs2_2 = wx.GridSizer(3, 1, 5, 5)
-            gs2_3 = wx.GridSizer(1, 3, 5, 5)
-            set_btn = wx.Button(configure_settings, wx.ID_ANY, "Submit")
-            set_btn.Bind(wx.EVT_BUTTON, self.set)
-            # Add to grid sizers
-            gs2_1.AddMany([(wx.StaticText(configure_settings, label='Set Frequency (MHz):'), 0,wx.EXPAND|wx.ALL,15),
-                (wx.StaticText(configure_settings, label='Set Gain (dB):'), 0,wx.EXPAND|wx.ALL,15),
-                (wx.StaticText(configure_settings, label='Set SNR:'), 0, wx.EXPAND|wx.ALL,15)])
+            self.detect_settings = gui.DetectionSettingsCtrl(parent=self, style=wx.SUNKEN_BORDER)
+            self.detect_settings.set_title_font(title_font)
+            vbox.Add(item=self.detect_settings, proportion=1, flag=wx.EXPAND)
 
-            gs2_2.AddMany([(self.set_gain , 0, wx.EXPAND|wx.ALL,5),
-                (self.set_freq, 0, wx.EXPAND|wx.ALL,5),
-                (self.set_snr, 0, wx.EXPAND|wx.ALL,5)])
-
-            gs2_3.AddMany([(gs2_1 , 0, wx.EXPAND|wx.ALL),
-                (gs2_2, 0, wx.EXPAND|wx.ALL),
-                (set_btn, 0, wx.EXPAND|wx.ALL)])
-
-            cs2_vbox.Add(gs2_3, 0, wx.ALL, 5)
-            configure_settings.SetSizer(cs2_vbox)
-            vbox.Add(configure_settings, proportion=1, flag=wx.EXPAND)
+            # cs2_vbox = wx.BoxSizer(wx.VERTICAL)     #BoxSizer for Detection Settings
+            # configure_settings = wx.Panel(self, style=wx.SUNKEN_BORDER)  #Panel object for detection settings
+            # configure_settings.SetBackgroundColour('#C2D1B2')
+            # #Labels
+            # lbl2 = wx.StaticText(configure_settings, -1, "DETECTION SETTINGS", style=wx.ALIGN_TOP)
+            # lbl2.SetFont(title_font)
+            # cs2_vbox.Add(lbl2, 0, wx.TOP|wx.LEFT, 20)
+            # # Set all of the values for the inputs
+            # self.set_gain = wx.TextCtrl(configure_settings)
+            # self.set_gain.SetValue(str(set_data[0]))
+            # self.set_freq = wx.TextCtrl(configure_settings)
+            # self.set_freq.SetValue(str(set_data[1]))
+            # self.set_snr = wx.TextCtrl(configure_settings)
+            # self.set_snr.SetValue(str(set_data[2]))
+            # #Grid sizers for label and input
+            # gs2_1 = wx.GridSizer(3, 1, 5, 5)
+            # gs2_2 = wx.GridSizer(3, 1, 5, 5)
+            # gs2_3 = wx.GridSizer(1, 3, 5, 5)
+            # set_btn = wx.Button(configure_settings, wx.ID_ANY, "Submit")
+            # set_btn.Bind(wx.EVT_BUTTON, self.set)
+            # # Add to grid sizers
+            # gs2_1.AddMany([(wx.StaticText(configure_settings, label='Set Frequency (MHz):'), 0,wx.EXPAND|wx.ALL,15),
+            #     (wx.StaticText(configure_settings, label='Set Gain (dB):'), 0,wx.EXPAND|wx.ALL,15),
+            #     (wx.StaticText(configure_settings, label='Set SNR:'), 0, wx.EXPAND|wx.ALL,15)])
+            #
+            # gs2_2.AddMany([(self.set_gain , 0, wx.EXPAND|wx.ALL,5),
+            #     (self.set_freq, 0, wx.EXPAND|wx.ALL,5),
+            #     (self.set_snr, 0, wx.EXPAND|wx.ALL,5)])
+            #
+            # gs2_3.AddMany([(gs2_1 , 0, wx.EXPAND|wx.ALL),
+            #     (gs2_2, 0, wx.EXPAND|wx.ALL),
+            #     (set_btn, 0, wx.EXPAND|wx.ALL)])
+            #
+            # cs2_vbox.Add(gs2_3, 0, wx.ALL, 5)
+            # configure_settings.SetSizer(cs2_vbox)
+            # vbox.Add(configure_settings, proportion=1, flag=wx.EXPAND)
 #------------------ end of detection settings -----------------------------
             # start and stop scan and timer settings
             start_scan = wx.Panel(self, style=wx.SUNKEN_BORDER)
@@ -266,51 +270,26 @@ class TabPanel(wx.Panel):
     #Getting message from telmetry on separate thread
     def update_on_receive(self, rcvd_msg):
         global compass_angle
-        global scanning1
+        global scanning
         # Upon receiving a detection packet AND system is not scanning, update the current scan results to show the most
         # recent result from the pi.
         # else
         # Upon receiving a detection pack AND it IS scanning, clear current scan results
         #
-        if(rcvd_msg.data_type == "SYS_INFO"): #Instance of RDF_Format data structure (Sys info packet
+        if rcvd_msg.data_type == "SYS_INFO": #Instance of RDF_Format data structure (Sys info packet
             # update_evt = gui.UpdateSysInfoEvent()
             self.sys_info.frequency = rcvd_msg.data[0]
-            self.sys_info.heading = rcvd_msg.data[1]
+            self.sys_info.bearing = rcvd_msg.data[1]
             self.sys_info.altitude = rcvd_msg.data[2]
-            # update_evt.frequency = rcvd_msg.data[0]
-            # update_evt.heading = rcvd_msg.data[1]
-            # update_evt.altitude = rcvd_msg.data[2]
-            # wx.PostEvent(self.sys_info, update_evt)
-            # self.sys_info.set_frequency(str(rcvd_msg.data[0]))
-            # self.sys_info.set_heading(str(rcvd_msg.data[1]))
-            # self.sys_info.set_altitude(str(rcvd_msg.data[2]))
+
             compass_angle = rcvd_msg.data[1]
             self.panel2.Refresh(eraseBackground=False)
-        elif(rcvd_msg.data_type == "DETECTION"): #Detection packet
-            if(scanning == 0):
-                self.sys_info.frequency = rcvd_msg.data[0]
-                self.sys_info.heading = rcvd_msg.data[1]
-                self.sys_info.altitude = rcvd_msg.data[2]
-                # update_evt = gui.UpdateSysInfoEvent()
-                # update_evt.frequency = rcvd_msg.data[0]
-                # update_evt.heading = rcvd_msg.data[1]
-                # update_evt.altitude = rcvd_msg.data[2]
-                # wx.PostEvent(self.sys_info, update_evt)
-                # self.sys_info.set_frequency(str(rcvd_msg.data[0]))
-                # self.sys_info.set_heading(str(rcvd_msg.data[1]))
-                # self.sys_info.set_altitude(str(rcvd_msg.data[2]))
-            else:
-                update_evt = gui.UpdateSysInfoEvent()
-                update_evt.frequency = ' '
-                update_evt.heading = ' '
-                update_evt.altitude = ' '
-                # wx.PostEvent(self.sys_info, update_evt)
-                # self.sys_info.set_frequency('')
-                # self.sys_info.set_heading('')
-                # self.sys_info.set_altitude('')
-        else:
-            pass
-#Overall GUI timer
+        elif rcvd_msg.data_type == "DETECTION": #Detection packet
+            if scanning == 0:
+                None
+                # TODO Fill out this section once we figure out what info is being sent in detection packet
+
+    #Overall GUI timer
     def update(self, event):
         global scanning_tmr
         global total_scan_time

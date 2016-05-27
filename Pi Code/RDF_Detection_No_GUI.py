@@ -168,7 +168,8 @@ def status_sender(tb):
 		# If not scanning (scanning = 0) it sends most recent detection or sends empty data upon initialization
 		if(scanning == 0):
 			detection = tb.collar_detect_Burst_Detection_0.get_detection()
-			Serial_CRC.send_serial("RPI_to_GS","DETECTION",[detection[1] - 178.0,detection[0],collar_freq])#swapped i for collar_freq
+
+			Serial_CRC.send_serial("RPI_to_GS","DETECTION",[collar_freq,detection[1] - 178.0, detection[0]])#swapped i for collar_freq
         #So if math.degrees(bearing) is 2 degrees then the UAV is pointed south
         #This will change if the position of the compass changes orientation
         #Always sends system info
