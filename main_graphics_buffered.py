@@ -32,7 +32,6 @@ class SpreadSheet(sheet.CSheet):
         for i in range(5):
             self.SetRowSize(i, 20)
 
-
 class TabPanel(wx.Panel):
     global total_scan_time
     global total_countdown_tmr
@@ -60,43 +59,6 @@ class TabPanel(wx.Panel):
             self.detect_settings.set_title_font(title_font)
             vbox.Add(item=self.detect_settings, proportion=1, flag=wx.EXPAND)
 
-            # cs2_vbox = wx.BoxSizer(wx.VERTICAL)     #BoxSizer for Detection Settings
-            # configure_settings = wx.Panel(self, style=wx.SUNKEN_BORDER)  #Panel object for detection settings
-            # configure_settings.SetBackgroundColour('#C2D1B2')
-            # #Labels
-            # lbl2 = wx.StaticText(configure_settings, -1, "DETECTION SETTINGS", style=wx.ALIGN_TOP)
-            # lbl2.SetFont(title_font)
-            # cs2_vbox.Add(lbl2, 0, wx.TOP|wx.LEFT, 20)
-            # # Set all of the values for the inputs
-            # self.set_gain = wx.TextCtrl(configure_settings)
-            # self.set_gain.SetValue(str(set_data[0]))
-            # self.set_freq = wx.TextCtrl(configure_settings)
-            # self.set_freq.SetValue(str(set_data[1]))
-            # self.set_snr = wx.TextCtrl(configure_settings)
-            # self.set_snr.SetValue(str(set_data[2]))
-            # #Grid sizers for label and input
-            # gs2_1 = wx.GridSizer(3, 1, 5, 5)
-            # gs2_2 = wx.GridSizer(3, 1, 5, 5)
-            # gs2_3 = wx.GridSizer(1, 3, 5, 5)
-            # set_btn = wx.Button(configure_settings, wx.ID_ANY, "Submit")
-            # set_btn.Bind(wx.EVT_BUTTON, self.set)
-            # # Add to grid sizers
-            # gs2_1.AddMany([(wx.StaticText(configure_settings, label='Set Frequency (MHz):'), 0,wx.EXPAND|wx.ALL,15),
-            #     (wx.StaticText(configure_settings, label='Set Gain (dB):'), 0,wx.EXPAND|wx.ALL,15),
-            #     (wx.StaticText(configure_settings, label='Set SNR:'), 0, wx.EXPAND|wx.ALL,15)])
-            #
-            # gs2_2.AddMany([(self.set_gain , 0, wx.EXPAND|wx.ALL,5),
-            #     (self.set_freq, 0, wx.EXPAND|wx.ALL,5),
-            #     (self.set_snr, 0, wx.EXPAND|wx.ALL,5)])
-            #
-            # gs2_3.AddMany([(gs2_1 , 0, wx.EXPAND|wx.ALL),
-            #     (gs2_2, 0, wx.EXPAND|wx.ALL),
-            #     (set_btn, 0, wx.EXPAND|wx.ALL)])
-            #
-            # cs2_vbox.Add(gs2_3, 0, wx.ALL, 5)
-            # configure_settings.SetSizer(cs2_vbox)
-            # vbox.Add(configure_settings, proportion=1, flag=wx.EXPAND)
-#------------------ end of detection settings -----------------------------
             # start and stop scan and timer settings
             start_scan = wx.Panel(self, style=wx.SUNKEN_BORDER)
             start_scan.SetBackgroundColour('#FFFFD6')
@@ -247,6 +209,7 @@ class TabPanel(wx.Panel):
         self.set_countdown.SetValue(str(total_countdown_tmr))
         self.set_scanning.SetValue(str(total_scan_time))
         self.panel2.Refresh(eraseBackground=False)
+
     #Start button handler
     def onToggle(self, event):
         global scanning_tmr
@@ -437,6 +400,8 @@ class Main_Frame(wx.Frame):
 
         self.SetMenuBar(menubar)
 
+        self.notebook.Bind(gui.EVT_SET_DETECT_SETTINGS, self.set_settings)
+
         self.Bind(wx.EVT_MENU, self.OnQuit, fitem)
 
     def ShowMessage4(self):
@@ -447,6 +412,9 @@ class Main_Frame(wx.Frame):
     def OnQuit(self, e):
         self.Close()
         Serial_CRC.ser_close()
+
+    def set_settings(self):
+        print 'Set settings from main frame'
 
 #When start button is pressed periodically send scanning status bit to pi so it knows to take data
 def status_sender():

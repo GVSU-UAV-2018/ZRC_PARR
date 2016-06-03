@@ -4,7 +4,7 @@ import threading
 import time
 import logging
 
-UpdateSysInfoEvent, EVT_UPDATE_SYSINFO = wx.lib.newevent.NewEvent()
+SetDetectSettingsEvent, EVT_SET_DETECT_SETTINGS = wx.lib.newevent.NewCommandEvent()
 
 class SysInfoForm(wx.Panel):
     """ Base form class for System Info controls that
@@ -34,7 +34,6 @@ class SysInfoForm(wx.Panel):
 
     def bind_events(self):
         """ Bind events for the control """
-        self.Bind(EVT_UPDATE_SYSINFO, self.update_labels)
 
     def do_layout(self):
         """ Layout the controls that were created by createControls().
@@ -83,9 +82,15 @@ class SystemInfoCtrl(SysInfoForm):
 
 
 class DetectionSettingsForm(wx.Panel):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, settings=None, *args, **kwargs):
         super(DetectionSettingsForm, self).__init__(*args, **kwargs)
-        self.settings = {'frequency': 0, 'gain': 1, 'snr': 1}
+        # Check if settings dictionary was passed from outside of the class
+        if settings is not None:
+            self.settings = settings
+        else:
+            self.settings = {'frequency': 0, 'gain': 1, 'snr': 1}
+
+        self.parent = kwargs['parent']
         self.create_controls()
         self.bind_events()
         self.do_layout()
@@ -102,7 +107,7 @@ class DetectionSettingsForm(wx.Panel):
         self.submit_button = wx.Button(parent=self, id=wx.ID_ANY, label="Submit")
 
     def bind_events(self):
-        self.submit_button.Bind(wx.EVT_BUTTON, self.set_settings)
+        self.submit_button.Bind(wx.EVT_BUTTON, self.submit_handler)
 
     def do_layout(self):
         raise NotImplementedError
@@ -110,17 +115,30 @@ class DetectionSettingsForm(wx.Panel):
     def set_title_font(self, font):
         self.title_label.SetFont(font)
 
+    def submit_handler(self, evt):
+        self.set_settings()
+
+    '''
+    Set the frequency, gain, and signal to noise ratio in dictionary from the
+    input boxes. Returns False and aborts entire set if any input failed to
+    parse into float.
+    '''
     def set_settings(self):
         try:
             freq = float(self.frequency_input.GetValue())
             gain = float(self.gain_input.GetValue())
             snr = float(self.snr_input.GetValue())
         except ValueError as ex:
-            print 'Failed to convert a setting to float.\n$s' % ex.message
+            print 'Failed to convert a setting to float.\n%s' % ex.message
+            return False
 
         self.settings['frequency'] = freq
         self.settings['gain'] = gain
         self.settings['snr'] = snr
+        # Create new set event and post it to parent
+        set_evt = SetDetectSettingsEvent(settings=self.settings)
+        wx.PostEvent(self.parent, set_evt)
+        return True
 
 
 class DetectionSettingsCtrl(DetectionSettingsForm):
