@@ -53,9 +53,10 @@ class SysInfoForm(wx.Panel):
 class SystemInfoCtrl(SysInfoForm):
     def __init__(self, *args, **kwargs):
         super(SystemInfoCtrl, self).__init__(*args, **kwargs)
-        update_thread = threading.Thread(target=self.tick_event)
-        update_thread.setDaemon(True)
-        update_thread.start()
+        self.update = True
+        self.update_thread = threading.Thread(target=self.tick_event)
+        self.update_thread.setDaemon(True)
+        self.update_thread.start()
 
     def do_layout(self):
         """ Define the layout of the controls """
@@ -76,9 +77,11 @@ class SystemInfoCtrl(SysInfoForm):
         self.SetSizerAndFit(top_sizer)
 
     def tick_event(self):
-        while True:
+        while self.update:
             wx.CallAfter(self.update_labels)
             time.sleep(0.3)
+
+    def 
 
 
 class DetectionSettingsForm(wx.Panel):
@@ -136,8 +139,9 @@ class DetectionSettingsForm(wx.Panel):
         self.settings['gain'] = gain
         self.settings['snr'] = snr
         # Create new set event and post it to parent
-        set_evt = SetDetectSettingsEvent(settings=self.settings)
+        set_evt = SetDetectSettingsEvent(id=wx.ID_ANY, settings=self.settings)
         wx.PostEvent(self.parent, set_evt)
+        print 'Posted set settings event'
         return True
 
 

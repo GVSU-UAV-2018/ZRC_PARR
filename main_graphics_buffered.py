@@ -413,7 +413,7 @@ class Main_Frame(wx.Frame):
         self.Close()
         Serial_CRC.ser_close()
 
-    def set_settings(self):
+    def set_settings(self, evt):
         print 'Set settings from main frame'
 
 #When start button is pressed periodically send scanning status bit to pi so it knows to take data
