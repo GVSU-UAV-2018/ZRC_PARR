@@ -239,14 +239,13 @@ class TabPanel(wx.Panel):
         # else
         # Upon receiving a detection pack AND it IS scanning, clear current scan results
         #
-        if rcvd_msg.data_type == "SYS_INFO": #Instance of RDF_Format data structure (Sys info packet
+        if rcvd_msg.data_type == "SYS_INFO": # Instance of RDF_Format data structure (Sys info packet
             # update_evt = gui.UpdateSysInfoEvent()
-            self.sys_info.frequency = rcvd_msg.data[0]
-            self.sys_info.bearing = rcvd_msg.data[1]
-            self.sys_info.altitude = rcvd_msg.data[2]
+            info = {'frequency': rcvd_msg.data[0], 'bearing': rcvd_msg.data[1], 'altitude': rcvd_msg.data[2]}
+            gui.pub.sendMessage('sys_info.update', info=info)
 
-            compass_angle = rcvd_msg.data[1]
-            self.panel2.Refresh(eraseBackground=False)
+            # compass_angle = rcvd_msg.data[1]
+            # self.panel2.Refresh(eraseBackground=False)
         elif rcvd_msg.data_type == "DETECTION": #Detection packet
             if scanning == 0:
                 None
@@ -410,8 +409,9 @@ class Main_Frame(wx.Frame):
         dial.ShowModal()
 
     def OnQuit(self, e):
-        self.Close()
         Serial_CRC.ser_close()
+        self.Close()
+
 
     def set_settings(self, evt):
         print 'Set settings from main frame'
@@ -436,7 +436,7 @@ def main():
     receiver = threading.Thread(target=Serial_CRC.receive_serial, args=(main.notebook.tabOne,))
     receiver.setDaemon(True)
     receiver.start()
-    sender = threading.Thread(target = status_sender)
+    sender = threading.Thread(target=status_sender)
     sender.setDaemon(True)
     sender.start()
     ex.MainLoop()

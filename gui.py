@@ -1,5 +1,6 @@
 import wx
 import wx.lib.newevent
+from wx.lib.pubsub import pub
 import threading
 import time
 import logging
@@ -8,7 +9,7 @@ SetDetectSettingsEvent, EVT_SET_DETECT_SETTINGS = wx.lib.newevent.NewCommandEven
 
 class SysInfoForm(wx.Panel):
     """ Base form class for System Info controls that
-        creates a bunch of conrols and handlers for callbacks.
+        creates a bunch of controls and handlers for callbacks.
         Doing the layout of the controls is the responsibility
         of subclasses (by means of doLayout() method """
 
@@ -17,6 +18,7 @@ class SysInfoForm(wx.Panel):
         self.altitude = 0
         self.bearing = 0
         self.frequency = 0
+        pub.subscribe(self.update_labels, 'sys_info.update')
         self.create_controls()
         self.bind_events()
         self.do_layout()
@@ -44,7 +46,15 @@ class SysInfoForm(wx.Panel):
     def set_title_font(self, font):
         self.title_label.SetFont(font)
 
-    def update_labels(self):
+    def update_labels(self, info=None):
+        if info is not None:
+            self.altitude = info['altitude']
+            self.bearing = info['bearing']
+            self.frequency = info['frequency']
+
+        wx.CallAfter(self.set_labels)
+
+    def set_labels(self):
         self.altitude_value.SetLabel(str(self.altitude) + ' meters')
         self.heading_value.SetLabel(str(self.bearing) + ' degrees')
         self.frequency_value.SetLabel(str(self.frequency) + ' MHz')
@@ -53,10 +63,9 @@ class SysInfoForm(wx.Panel):
 class SystemInfoCtrl(SysInfoForm):
     def __init__(self, *args, **kwargs):
         super(SystemInfoCtrl, self).__init__(*args, **kwargs)
-        self.update = True
-        self.update_thread = threading.Thread(target=self.tick_event)
-        self.update_thread.setDaemon(True)
-        self.update_thread.start()
+        # self.update_thread = threading.Thread(target=self.tick_event)
+        # self.update_thread.setDaemon(True)
+        # self.update_thread.start()
 
     def do_layout(self):
         """ Define the layout of the controls """
@@ -76,12 +85,10 @@ class SystemInfoCtrl(SysInfoForm):
         top_sizer.Add(control_grid, 0, wx.ALL | wx.EXPAND, border=20)
         self.SetSizerAndFit(top_sizer)
 
-    def tick_event(self):
-        while self.update:
-            wx.CallAfter(self.update_labels)
-            time.sleep(0.3)
-
-    def 
+    # def tick_event(self):
+    #     while self.update:
+    #         wx.CallAfter(self.update_labels)
+    #         time.sleep(0.3)
 
 
 class DetectionSettingsForm(wx.Panel):
