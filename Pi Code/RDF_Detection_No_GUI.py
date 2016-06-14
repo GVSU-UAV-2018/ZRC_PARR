@@ -5,6 +5,9 @@
 # Generated: Mon Oct 26 23:51:08 2015
 ##################################################
 
+import math
+import threading
+import time
 from gnuradio import blocks
 from gnuradio import fft
 from gnuradio import filter
@@ -13,14 +16,14 @@ from gnuradio.eng_option import eng_option
 from gnuradio.fft import window
 from gnuradio.filter import firdes
 from optparse import OptionParser
+
 import collar_detect
 import fcdproplus
-import Serial_CRC
-import threading
 import smbus
-import time
-import math
+
 import Adafruit_BMP.BMP085 as BMP085
+import Serial_CRC
+
 #sensor bus library for i2c for sensor for communication between pi processor and sensor
 bus = smbus.SMBus(1)
 #Address of BMP devices

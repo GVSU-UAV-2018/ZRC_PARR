@@ -17,7 +17,7 @@ ser = serial.Serial(
     baudrate=57600,
     stopbits=serial.STOPBITS_ONE,
     bytesize=serial.EIGHTBITS,
-    timeout = None
+    timeout=None
 )
 
 closing = False

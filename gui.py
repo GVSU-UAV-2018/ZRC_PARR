@@ -47,14 +47,26 @@ class SysInfoForm(wx.Panel):
         self.title_label.SetFont(font)
 
     def update_labels(self, info=None):
+        """
+        Set the altitude, bearing, and frequency if provided
+        a dictionary of info. Then update the labels on the
+        UI thread.
+        :param info: dictionary of system info parameters
+        :return: No return value
+        """
         if info is not None:
             self.altitude = info['altitude']
             self.bearing = info['bearing']
             self.frequency = info['frequency']
 
-        wx.CallAfter(self.set_labels)
+        wx.CallAfter(self._set_labels)
 
-    def set_labels(self):
+    def _set_labels(self):
+        """
+        Set the labels for altitude, bearing, and frequency.
+        Should only be called from the UI thread
+        :return: No return value
+        """
         self.altitude_value.SetLabel(str(self.altitude) + ' meters')
         self.heading_value.SetLabel(str(self.bearing) + ' degrees')
         self.frequency_value.SetLabel(str(self.frequency) + ' MHz')
@@ -63,9 +75,6 @@ class SysInfoForm(wx.Panel):
 class SystemInfoCtrl(SysInfoForm):
     def __init__(self, *args, **kwargs):
         super(SystemInfoCtrl, self).__init__(*args, **kwargs)
-        # self.update_thread = threading.Thread(target=self.tick_event)
-        # self.update_thread.setDaemon(True)
-        # self.update_thread.start()
 
     def do_layout(self):
         """ Define the layout of the controls """
@@ -84,11 +93,6 @@ class SystemInfoCtrl(SysInfoForm):
             (self.frequency_value, 0, flags)])
         top_sizer.Add(control_grid, 0, wx.ALL | wx.EXPAND, border=20)
         self.SetSizerAndFit(top_sizer)
-
-    # def tick_event(self):
-    #     while self.update:
-    #         wx.CallAfter(self.update_labels)
-    #         time.sleep(0.3)
 
 
 class DetectionSettingsForm(wx.Panel):
