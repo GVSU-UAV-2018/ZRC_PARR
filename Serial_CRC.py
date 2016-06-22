@@ -60,7 +60,7 @@ def send_serial(direction, data_type, data, scanning):
 
     ser.write(pw.wrap(msg))
 
-def receive_serial(panel):
+def receive_serial(panel):        pass
     # Sample: receiving a message
     #
     ser.isOpen()

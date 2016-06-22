@@ -87,7 +87,7 @@ class UAVRadioFinder(zrc_base.RadioFinderBase, gr.top_block):
     def scan_frequency(self):
         return self._scan_frequency
 
-    @gain.setter
+    @scan_frequency.setter
     def scan_frequency(self, val):
         self._scan_frequency = val
         self.fcdproplus_fcdproplus_0.set_freq(self._scan_frequency - self.freq_offset)
@@ -96,7 +96,7 @@ class UAVRadioFinder(zrc_base.RadioFinderBase, gr.top_block):
     def snr_threshold(self):
         return self._snr_threshold
 
-    @gain.setter
+    @snr_threshold.setter
     def snr_threshold(self, val):
         self._snr_threshold = val
 
