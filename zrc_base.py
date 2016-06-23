@@ -6,52 +6,54 @@ import serial
 from zlib import crc32
 from protocolwrapper import ProtocolWrapper, ProtocolStatus
 from construct import Struct, ULInt32, ULInt16, Flag, Embed, LFloat32, Container
-from pydispatch import dispatcher
 
-class RadioFinderBase(metaclass=ABCMeta, object):
-    @property
-    def gain(self):
-        pass
 
-    @gain.setter
-    @abstractproperty
-    def gain(self, val):
-        pass
-
-    @property
-    def scan_frequency(self):
-        pass
-
-    @scan_frequency.setter
-    @abstractproperty
-    def scan_frequency(self, val):
-        pass
-
-    @property
-    def snr_threshold(self):
-        pass
-
-    @snr_threshold.setter
-    @abstractproperty
-    def snr_threshold(self, val):
-        pass
-
-    @abstractmethod
-    def is_scanning(self):
-        pass
-
-    @abstractmethod
-    def start_scanning(self):
-        pass
-
-    @abstractmethod
-    def stop_scanning(self):
-        pass
+# class RadioFinderBase(metaclass=ABCMeta, object):
+    # __metaclass__ = ABCMeta
+    #
+    # @property
+    # def gain(self):
+    #     pass
+    #
+    # @gain.setter
+    # @abstractproperty
+    # def gain(self, val):
+    #     pass
+    #
+    # @property
+    # def scan_frequency(self):
+    #     pass
+    #
+    # @scan_frequency.setter
+    # @abstractproperty
+    # def scan_frequency(self, val):
+    #     pass
+    #
+    # @property
+    # def snr_threshold(self):
+    #     pass
+    #
+    # @snr_threshold.setter
+    # @abstractproperty
+    # def snr_threshold(self, val):
+    #     pass
+    #
+    # @abstractmethod
+    # def is_scanning(self):
+    #     pass
+    #
+    # @abstractmethod
+    # def start_scanning(self):
+    #     pass
+    #
+    # @abstractmethod
+    # def stop_scanning(self):
+    #     pass
 
 
 class SerialReadThread(threading.Thread):
     def __init__(self, in_q, serial_p):
-        super(SerialReadThread, in_q).__init__()
+        super(SerialReadThread, self).__init__()
         self.in_q = in_q
         self.serial = serial_p
         self.alive = threading.Event()
@@ -67,6 +69,7 @@ class SerialReadThread(threading.Thread):
         threading.Thread.join(self, timeout)
 
     def run(self):
+        self.alive.set()
         while self.alive.isSet():
             # Will block until a byte is read
             byte = self.serial.read(size=1)
@@ -123,19 +126,26 @@ class SerialWriteThread(threading.Thread):
         threading.Thread.join(timeout)
 
     def run(self):
+        self.alive.set()
         while self.alive.isSet():
             try:
                 msg = self.out_q.get(block=True, timeout=0.1)
                 self.serial.write(msg)
             except Queue.Empty as e:
+                print e.message
                 continue
 
 
-class QueuedSerialPort(object):
+class SerialPort(object):
     def __init__(self, in_q=None, out_q=None, *args, **kwargs):
-        super(QueuedSerialPort, self).__init__()
+        super(SerialPort, self).__init__()
         self.in_q = in_q or Queue.Queue()
         self.out_q = out_q or Queue.Queue()
+        self.pwrap = ProtocolWrapper(
+            header=PROTOCOL_HEADER,
+            footer=PROTOCOL_FOOTER,
+            dle=PROTOCOL_DLE
+        )
 
         port = kwargs.get('port', '/dev/ttyUSB0')
         baud = kwargs.get('baud', 57600)
@@ -156,13 +166,33 @@ class QueuedSerialPort(object):
         self.receive_thread.start()
         self.send_thread.start()
 
+    def send_attitude(self, alt, heading):
+        msg_str = msg_attitude.build(
+            Container(
+                msg_id=2,
+                altitude=alt,
+                heading=heading,
+                crc=0
+            )
+        )
+
+        msg_no_crc = msg_str[:-4]
+        crc = msg_crc.build(
+            Container(crc=crc32(msg_no_crc))
+        )
+
+        packet = self.pwrap.wrap(msg_no_crc + crc)
+
+        try:
+            self.out_q.put(packet, block=True, timeout=0.1)
+        except Queue.Full as e:
+            #TODO Put in error/warning logging
+            print 'Queue is full. Did not append attitude packet'
+
     def close(self):
         self.receive_thread.join(timeout=0.2)
         self.send_thread.join(timeout=0.2)
         self.serial.close()
-
-
-
 
 
 

@@ -17,7 +17,7 @@ import Adafruit_BMP.BMP085 as BMP085
 import zrc_base
 
 
-class UAVRadioFinder(zrc_base.RadioFinderBase, gr.top_block):
+class UAVRadioFinder(gr.top_block):
     """
     Represents a radio finder located on a UAV. Detection is accomplished
     using gnuradio and a software defined radio.
