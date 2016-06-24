@@ -5,7 +5,7 @@ import time
 import serial
 from zlib import crc32
 from protocolwrapper import ProtocolWrapper, ProtocolStatus
-from construct import Struct, SLInt32, ULInt32, ULInt16, Flag, Embed, LFloat32, Container
+from construct import Struct, ULInt32, ULInt16, Flag, Embed, LFloat32, Container
 
 
 # class RadioFinderBase(metaclass=ABCMeta, object):
@@ -167,6 +167,7 @@ class SerialPort(object):
         self.send_thread.start()
 
     def send_attitude(self, alt, heading):
+
         msg_str = msg_attitude.build(
             Container(
                 msg_id=2,
@@ -175,6 +176,10 @@ class SerialPort(object):
                 crc=0
             )
         )
+
+        header = msg_header.build(Container(msg_id=2))
+        msg_str = msg_str[4:]
+        msg_str = header + msg_str
 
         msg_no_crc = msg_str[:-4]
         crc = msg_crc.build(
@@ -201,10 +206,10 @@ PROTOCOL_HEADER = '\x11'
 PROTOCOL_FOOTER = '\x12'
 PROTOCOL_DLE = '\x90'
 
-msg_crc = Struct('msg_crc', SLInt32('crc'))
+msg_crc = Struct('msg_crc', ULInt32('crc'))
 
 msg_header = Struct('msg_header',
-                    ULInt16('msg_id')
+                    ULInt32('msg_id')
 )
 
 msg_scanning = Struct('msg_scanning',

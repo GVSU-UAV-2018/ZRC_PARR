@@ -3,6 +3,7 @@ import Queue
 import time
 
 def main():
+    port=None
     try:
         in_q = Queue.Queue()
         out_q = Queue.Queue()
@@ -13,7 +14,7 @@ def main():
         while var is not 'y':
             port.send_attitude(alt=0.2, heading=180.0)
             print 'sent attitude'
-            var = raw_input('Do you want to quit?: ')
+            time.sleep(1)
     except Exception as e:
         print e.message
 
