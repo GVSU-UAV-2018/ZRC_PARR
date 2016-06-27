@@ -1,54 +1,10 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 import Queue
 import threading
-import time
 import serial
 from zlib import crc32
 from protocolwrapper import ProtocolWrapper, ProtocolStatus
 from construct import Struct, SLInt32, ULInt32, ULInt16, Flag, Embed, LFloat32, Container
-
-
-# class RadioFinderBase(metaclass=ABCMeta, object):
-    # __metaclass__ = ABCMeta
-    #
-    # @property
-    # def gain(self):
-    #     pass
-    #
-    # @gain.setter
-    # @abstractproperty
-    # def gain(self, val):
-    #     pass
-    #
-    # @property
-    # def scan_frequency(self):
-    #     pass
-    #
-    # @scan_frequency.setter
-    # @abstractproperty
-    # def scan_frequency(self, val):
-    #     passpy
-    #
-    # @property
-    # def snr_threshold(self):
-    #     pass
-    #
-    # @snr_threshold.setter
-    # @abstractproperty
-    # def snr_threshold(self, val):
-    #     pass
-    #
-    # @abstractmethod
-    # def is_scanning(self):
-    #     pass
-    #
-    # @abstractmethod
-    # def start_scanning(self):
-    #     pass
-    #
-    # @abstractmethod
-    # def stop_scanning(self):
-    #     pass
 
 
 class SerialReadThread(threading.Thread):
@@ -166,6 +122,50 @@ class SerialPort(object):
         self.receive_thread.start()
         self.send_thread.start()
 
+    def _put_message(self, msg):
+        try:
+            self.out_q.put(msg, block=True, timeout=0.1)
+        except Queue.Full as e:
+            #TODO put in error logging
+            print 'Output queue is full. Did not append message'
+            print e.message
+
+    def _append_crc(packet):
+        msg_no_crc = packet[:-4]
+        crc = msg_crc.build(
+            Container(crc=crc32(msg_no_crc))
+        )
+
+        packet_crc = msg_no_crc + crc
+        return packet_crc
+
+    def send_scanning(self, scanning):
+        msg_str = msg_scanning.build(
+            Container(
+                msg_id=0,
+                scanning=scanning
+            )
+        )
+
+        fin_msg = self._append_crc(msg_str)
+        packet = self.pwrap(fin_msg)
+        self._put_message(packet)
+
+    def send_scan_settings(self, gain, freq, snr):
+        msg_str = msg_scan_settings.build(
+            Container(
+                msg_id=1,
+                gain=gain,
+                scan_frequency=freq,
+                snr_threshold=snr,
+                crc=0
+            )
+        )
+
+        fin_msg = self._append_crc(msg_str)
+        packet = self.pwrap.wrap(fin_msg)
+        self._put_message(packet)
+
     def send_attitude(self, alt, heading):
         msg_str = msg_attitude.build(
             Container(
@@ -176,18 +176,23 @@ class SerialPort(object):
             )
         )
 
-        msg_no_crc = msg_str[:-4]
-        crc = msg_crc.build(
-            Container(crc=crc32(msg_no_crc))
+        fin_msg = self._append_crc(msg_str)
+        packet = self.pwrap.wrap(fin_msg)
+        self._put_message(packet)
+
+    def send_detection(self, snr, heading):
+        msg_str = msg_detection.build(
+            Container(
+                msg_id=3,
+                snr=snr,
+                heading=heading,
+                crc=0
+            )
         )
 
-        packet = self.pwrap.wrap(msg_no_crc + crc)
-
-        try:
-            self.out_q.put(packet, block=True, timeout=0.1)
-        except Queue.Full as e:
-            #TODO Put in error/warning logging
-            print 'Queue is full. Did not append attitude packet'
+        fin_msg = self._append_crc(msg_str)
+        packet = self.pwrap.wrap(fin_msg)
+        self._put_message(packet)
 
     def close(self):
         self.receive_thread.join(timeout=0.2)
