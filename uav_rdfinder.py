@@ -11,6 +11,7 @@ import fcdproplus
 import Serial_CRC
 import threading
 import smbus
+from pubsub import pub
 import time
 import math
 import Adafruit_BMP.BMP085 as BMP085
@@ -41,8 +42,11 @@ class UAVRadioFinder(gr.top_block):
         self._attitude = {'heading': 0.0, 'altitude': 0.0}
 
         self.altimeter = kwargs.get('altimeter', BarometerSensor())
+        self.compass = kwargs.get('compass', Magnetometer())
+        
         self._create_gr_blocks(kwargs.get('sample_rate', 192000))
         self._connect_gr_blocks()
+        #TODO Subscribe to event here which gets published from Burst_detection and store bursts
 
     def _create_gr_blocks(self, sample_rate):
         self.fft_vxx_0 = fft.fft_vfc(512, True, (window.rectangular(512)), 1)
@@ -70,9 +74,6 @@ class UAVRadioFinder(gr.top_block):
         self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 0))
         self.connect((self.blocks_multiply_xx_0, 0), (self.blocks_complex_to_mag_0, 0))
         self.connect((self.blocks_complex_to_mag_0, 0), (self.collar_detect_Burst_Detection_0, 0))
-
-    def _init_communication(self):
-        pass
 
     @property
     def gain(self):
@@ -109,20 +110,20 @@ class UAVRadioFinder(gr.top_block):
     def stop_scanning(self):
         pass
 
-    def send_status_msg(self):
+    def get_heading(self):
         pass
 
-    def get_heading(self):
+    def get_altitude(self):
         if self.altimeter is None:
             raise TypeError("No barometer sensor found")
 
         return self.altimeter.get_altitude()
 
-    def send_detection_msg:
-        pass
+    def close(self):
+        self.serial_p.close()
 
 
-class GPSCompass(object):
+class Magnetometer(object):
     """
     Represents an GPS compass using i2c interface
     Arguments:
@@ -131,6 +132,9 @@ class GPSCompass(object):
         byte_sample_rate - byte that sets sample rate for device
         byte_gain - byte that sets gain of device
     """
+    X_ADDRESS = 3
+    Y_ADDRESS = 7
+
     def __init__(self, *args, **kwargs):
         self.bus = smbus.SMBus(kwargs.get('port', 1))
         self.address = kwargs.get('address', 0x1e)
@@ -160,6 +164,11 @@ class GPSCompass(object):
         word = (high_byte >> 8) + low_byte
         return word
 
+    def get_x(self):
+        return self.read_word_2c(Magnetometer.X_ADDRESS)
+
+    def get_y(self):
+        return self.read_word_2c(Magnetometer.Y_ADDRESS)
 
     def read_word_2c(self, location):
         """

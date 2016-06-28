@@ -1,6 +1,7 @@
 import wx
 import wx.lib.newevent
-from wx.lib.pubsub import pub
+from pubsub import pub
+#from wx.lib.pubsub import pub
 import threading
 import time
 import logging
