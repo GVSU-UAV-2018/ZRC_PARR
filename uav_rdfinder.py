@@ -8,6 +8,7 @@ from gnuradio.filter import firdes
 from optparse import OptionParser
 import collar_detect
 import fcdproplus
+import Queue
 import Serial_CRC
 import threading
 import smbus
@@ -15,7 +16,7 @@ from pubsub import pub
 import time
 import math
 import Adafruit_BMP.BMP085 as BMP085
-import zrc_base
+from zrc_base import SerialPort, msg_id_to_type
 
 
 class UAVRadioFinder(gr.top_block):
@@ -37,20 +38,22 @@ class UAVRadioFinder(gr.top_block):
         self._scan_frequency = kwargs.get('scan_frequency', 150.096e6)
         self._snr_threshold = kwargs.get('snr_threshold', 5.0)
 
+        self.serial_port = kwargs.get('serial_port', None)
+
         self.scanning = False
         self.freq_offset = kwargs.get('freq_offset', 3000)
         self._attitude = {'heading': 0.0, 'altitude': 0.0}
 
         self.altimeter = kwargs.get('altimeter', BarometerSensor())
-        self.compass = kwargs.get('compass', Magnetometer())
+        self.compass = kwargs.get('compass', Compass())
         
         self._create_gr_blocks(kwargs.get('sample_rate', 192000))
         self._connect_gr_blocks()
-        #TODO Subscribe to event here which gets published from Burst_detection and store bursts
+        # TODO Subscribe to event here which gets published from Burst_detection and store bursts
 
     def _create_gr_blocks(self, sample_rate):
         self.fft_vxx_0 = fft.fft_vfc(512, True, (window.rectangular(512)), 1)
-        self.fcdproplus_fcdproplus_0 = fcdproplus.fcdproplus("",1)
+        self.fcdproplus_fcdproplus_0 = fcdproplus.fcdproplus("", 1)
         self.fcdproplus_fcdproplus_0.set_lna(1)
         self.fcdproplus_fcdproplus_0.set_mixer_gain(1)
         self.fcdproplus_fcdproplus_0.set_if_gain(self.gain)
@@ -104,55 +107,108 @@ class UAVRadioFinder(gr.top_block):
     def is_scanning(self):
         return self.scanning
 
-    def start_scanning(self):
-        pass
+    def scan(self):
+        try:
+            msg = self.serial_port.in_q.get(block=True, timeout=0.1)
+            if msg is not None:
+                self._handle_msg(msg)
+        except Queue.Empty as e:
+            pass
 
-    def stop_scanning(self):
-        pass
+        # Send UAV attitude to the ground station
+        self.serial_port.send_attitude(
+            alt=self.get_altitude(),
+            heading=self.get_heading())
+
+    def start(self, max_noutput_items=10000000):
+        gr.top_block.start(max_noutput_items)
+        self.serial_p.start()
 
     def get_heading(self):
-        pass
+        if self.compass is None:
+            raise TypeError('No compass sensor found')
+
+        return self.compass.get_heading()
 
     def get_altitude(self):
         if self.altimeter is None:
-            raise TypeError("No barometer sensor found")
+            raise TypeError('No altimeter sensor found')
 
         return self.altimeter.get_altitude()
+
+    def _handle_msg(self, msg):
+        if msg_id_to_type[msg.msg_id] == 'scanning':
+            if msg.scanning == 1 and self.scanning is False:
+                self.scanning = True
+            elif msg.scanning == 0 and self.scanning is True:
+                self.scanning = False
+
+        if msg_id_to_type[msg.msg_id] == 'scan_settings':
+            self.gain = msg.gain
+            self.scan_frequency = msg.scan_frequency
+            self.snr_threshold = msg.snr_threshold
 
     def close(self):
         self.serial_p.close()
 
+class Compass(object):
+    def __init__(self, *args, **kwargs):
+        self.sensor = HMC5883L(args, kwargs)
+        self.x_offset = 180
+        self.y_offset = 709
+        self.z_offset = 0
+        self.scale = 0.92
 
-class Magnetometer(object):
+    def set_offsets(self, x, y, z, scale):
+        self.x_offset = x
+        self.y_offset = y
+        self.z_offset = z
+        self.scale = scale
+
+    def get_heading(self):
+        x = self.sensor.get_x()
+        y = self.sensor.get_y()
+        # TODO Revisit this and figure out what is going on here
+        x = (x - self.x_offset) * self.scale
+        y = (y - self.y_offset) * self.scale
+        heading = math.atan2(y, x) - 0.1745329
+        return heading
+
+
+class HMC5883L(object):
     """
-    Represents an GPS compass using i2c interface
+    Represents HMC5883 magnetometer
     Arguments:
         port - The I2C port number on which the device resides
         address - Address location of device
         byte_sample_rate - byte that sets sample rate for device
         byte_gain - byte that sets gain of device
     """
-    X_ADDRESS = 3
-    Y_ADDRESS = 7
+    CONFIG_A_REGISTER = 0
+    CONFIG_B_REGISTER = 1
+    MODE_REGISTER = 2
+    X_REGISTER = 3
+    Z_REGISTER = 5
+    Y_REGISTER = 7
 
     def __init__(self, *args, **kwargs):
         self.bus = smbus.SMBus(kwargs.get('port', 1))
-        self.address = kwargs.get('address', 0x1e)
+        self.address = kwargs.get('bus_address', 0x1e)
 
         # Set initial sample rate to 8 samples at 15Hz
-        self.set_sample_rate(kwargs.get('byte_sample_rate', 0b01110000))
+        self.set_config_a(kwargs.get('config_a', 0b01110000))
         # 1.3 gain LSb / Gauss 1090 (default)
-        self.set_gain(kwargs.get('byte_gain', 0b00100000))
-        self.set_continuous_sampling()
+        self.set_config_b(kwargs.get('config_b', 0b00100000))
+        self.set_op_mode(kwargs.get('op_mode', 0b00000000))
 
-    def set_sample_rate(self, config_byte):
-        self.write_byte(0, config_byte)
+    def set_config_a(self, config_byte):
+        self.write_byte(HMC5883L.CONFIG_A_REGISTER, config_byte)
 
-    def set_gain(self, config_byte):
-        self.write_byte(1, config_byte)
+    def set_config_b(self, config_byte):
+        self.write_byte(HMC5883L.CONFIG_B_REGISTER, config_byte)
 
-    def set_continuous_sampling(self):
-        self.write_byte(2, 0b00000000)
+    def set_op_mode(self, op_mode):
+        self.write_byte(HMC5883L.MODE_REGISTER, op_mode)
 
     def read_byte(self, location):
         return self.bus.read_byte_data(self.address, location)
@@ -165,10 +221,13 @@ class Magnetometer(object):
         return word
 
     def get_x(self):
-        return self.read_word_2c(Magnetometer.X_ADDRESS)
+        return self.read_word_2c(HMC5883L.X_REGISTER)
+
+    def get_z(self):
+        return self.read_word_2c(HMC5883L.Z_REGISTER)
 
     def get_y(self):
-        return self.read_word_2c(Magnetometer.Y_ADDRESS)
+        return self.read_word_2c(HMC5883L.Y_REGISTER)
 
     def read_word_2c(self, location):
         """
@@ -192,3 +251,28 @@ class BarometerSensor(object):
 
     def get_altitude(self):
         return self.sensor.read_altitude()
+
+
+def main_loop():
+    input_q = Queue.Queue()
+    output_q = Queue.Queue()
+    serial_port = SerialPort(in_q=input_q, out_q=output_q)
+
+    rdf = UAVRadioFinder(serial_port=serial_port)
+    rdf.start()
+
+    while True:
+        try:
+            rdf.scan()
+        except Exception as e:
+            print e.message
+            rdf.close()
+            break
+
+if __name__ == '__main__':
+    if gr.enable_realtime_scheduling() != gr.RT_OK:
+        print 'Error: failed to enable real time scheduling'
+
+    main_loop()
+
+

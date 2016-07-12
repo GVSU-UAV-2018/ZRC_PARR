@@ -14,7 +14,7 @@ def main():
         while var is not 'y':
             port.send_attitude(alt=0.2, heading=180.0)
             print 'sent attitude'
-            time.sleep(1)
+            time.sleep(60)
     except Exception as e:
         print e.message
 
