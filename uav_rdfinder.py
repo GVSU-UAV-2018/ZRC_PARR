@@ -151,6 +151,7 @@ class UAVRadioFinder(gr.top_block):
     def close(self):
         self.serial_p.close()
 
+
 class Compass(object):
     def __init__(self, *args, **kwargs):
         self.sensor = HMC5883L(args, kwargs)
