@@ -3,7 +3,9 @@ import Queue
 import threading
 import time
 
+global alive
 alive = threading.Event()
+global suppress
 suppress = True
 
 def receive_loop(in_q):
@@ -42,7 +44,7 @@ if __name__ == '__main__':
 
 
     while True:
-        user_input = input('Enter input:')
+        user_input = raw_input('Enter input:')
 
         if user_input == "q":
             break
@@ -52,7 +54,7 @@ if __name__ == '__main__':
             suppress = True
         elif user_input == "set_settings":
             serial_port.send_scan_settings(gain=3,freq=154.096e6,snr=3)
-
+            print 'sending scan settings'
         serial_port.send_scanning(scanning=1)
         time.sleep(1)
 
