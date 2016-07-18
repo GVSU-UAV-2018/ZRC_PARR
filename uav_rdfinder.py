@@ -12,7 +12,7 @@ import Queue
 import Serial_CRC
 import threading
 import smbus
-from pubsub import pub
+from pubsub import
 import time
 import math
 import Adafruit_BMP.BMP085 as BMP085
