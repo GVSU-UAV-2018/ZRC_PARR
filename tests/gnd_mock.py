@@ -37,6 +37,7 @@ if __name__ == '__main__':
     output_q = Queue.Queue()
 
     serial_port = SerialPort(in_q=input_q, output_q=output_q)
+    serial_port.start()
 
     receive_thread = threading.Thread(target=receive_loop, args=(input_q,))
     receive_thread.daemon = True
@@ -57,6 +58,5 @@ if __name__ == '__main__':
             print 'sending scan settings'
         serial_port.send_scanning(scanning=1)
         time.sleep(1)
-
 
     receive_thread.join(timeout=0.2)

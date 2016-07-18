@@ -121,7 +121,6 @@ class SerialPort(object):
     def start(self):
         self.receive_thread.start()
         self.send_thread.start()
-        print 'start called'
 
     def _put_message(self, msg):
         try:
@@ -131,7 +130,7 @@ class SerialPort(object):
             print 'Output queue is full. Did not append message'
             print e.message
 
-    def _append_crc(self, packet):
+    def _append_crc(packet):
         msg_no_crc = packet[:-4]
         crc = msg_crc.build(
             Container(crc=crc32(msg_no_crc))
@@ -144,13 +143,12 @@ class SerialPort(object):
         msg_str = msg_scanning.build(
             Container(
                 msg_id=0,
-                scanning=scanning,
-                crc=0
+                scanning=scanning
             )
         )
 
         fin_msg = self._append_crc(msg_str)
-        packet = self.pwrap.wrap(fin_msg)
+        packet = self.pwrap(fin_msg)
         self._put_message(packet)
 
     def send_scan_settings(self, gain, freq, snr):
