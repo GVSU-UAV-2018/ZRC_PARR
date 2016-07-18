@@ -120,7 +120,7 @@ class UAVRadioFinder(gr.top_block):
             heading=self.get_heading())
 
     def start(self, max_noutput_items=10000000):
-        gr.top_block.start(max_noutput_items)
+        super(UAVRadioFinder, self).start(max_noutput_items)
         self.serial_p.start()
 
     def get_heading(self):
