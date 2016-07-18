@@ -256,7 +256,7 @@ class BarometerSensor(object):
 def main_loop():
     input_q = Queue.Queue()
     output_q = Queue.Queue()
-    serial_port = SerialPort(in_q=input_q, out_q=output_q)
+    serial_port = SerialPort(in_q=input_q, out_q=output_q, port='/dev/ttyAMA0')
 
     rdf = UAVRadioFinder(serial_port=serial_port)
     rdf.start()
