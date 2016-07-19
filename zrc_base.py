@@ -143,7 +143,8 @@ class SerialPort(object):
         msg_str = msg_scanning.build(
             Container(
                 msg_id=0,
-                scanning=scanning
+                scanning=scanning,
+                crc=0
             )
         )
 
