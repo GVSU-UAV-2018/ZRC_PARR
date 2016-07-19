@@ -22,7 +22,7 @@ class SerialReadThread(threading.Thread):
 
     def join(self, timeout=None):
         self.alive.clear()
-        threading.Thread.join(self, timeout)
+        super(SerialReadThread, self).Thread.join(self, timeout)
 
     def run(self):
         self.alive.set()
@@ -79,7 +79,7 @@ class SerialWriteThread(threading.Thread):
 
     def join(self, timeout=None):
         self.alive.clear()
-        threading.Thread.join(timeout)
+        super(SerialWriteThread, self).join(timeout)
 
     def run(self):
         self.alive.set()
@@ -121,7 +121,6 @@ class SerialPort(object):
     def start(self):
         self.receive_thread.start()
         self.send_thread.start()
-        print 'start called'
 
     def _put_message(self, msg):
         try:
@@ -144,13 +143,12 @@ class SerialPort(object):
         msg_str = msg_scanning.build(
             Container(
                 msg_id=0,
-                scanning=scanning,
-                crc=0
+                scanning=scanning
             )
         )
 
         fin_msg = self._append_crc(msg_str)
-        packet = self.pwrap.wrap(fin_msg)
+        packet = self.pwrap(fin_msg)
         self._put_message(packet)
 
     def send_scan_settings(self, gain, freq, snr):
