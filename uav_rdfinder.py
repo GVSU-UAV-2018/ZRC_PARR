@@ -254,7 +254,9 @@ class BarometerSensor(object):
         return self.sensor.read_altitude()
 
 
+
 def main_loop():
+    global run
     input_q = Queue.Queue()
     output_q = Queue.Queue()
     serial_port = SerialPort(in_q=input_q, out_q=output_q)
@@ -262,7 +264,7 @@ def main_loop():
     rdf = UAVRadioFinder(serial_port=serial_port)
     rdf.start()
 
-    while True:
+    while run:
         try:
             rdf.scan()
         except Exception as e:
@@ -270,10 +272,21 @@ def main_loop():
             rdf.close()
             break
 
+    rdf.close()
+
+run = True
+
 if __name__ == '__main__':
     if gr.enable_realtime_scheduling() != gr.RT_OK:
         print 'Error: failed to enable real time scheduling'
+    global run
+    main_thread = threading.Thread(target=main_loop)
+    main_thread.start()
 
-    main_loop()
+    raw_input('Press enter to quit: ')
+
+    run = False
+    main_thread.join(timeout=1)
+
 
 
