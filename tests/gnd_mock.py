@@ -18,6 +18,7 @@ def receive_loop(in_q):
             msg = in_q.get(block=True, timeout=0.1)
             if msg is not None:
                 if msg_id_to_type[msg.msg_id] == 'attitude' and suppress is False:
+                    
                     print 'Received ATTITUDE packet'
                     print "altitude: {0}".format(str(msg.altitude))
                     print "heading: {0}".format(str(msg.heading))
@@ -27,6 +28,7 @@ def receive_loop(in_q):
                     print "snr: {0}".format(str(msg.snr))
                     print "heading: {0}".format(str(msg.heading))
                     print '---------------------'
+
 
         except Queue.Empty as e:
             continue
