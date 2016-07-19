@@ -154,8 +154,8 @@ class UAVRadioFinder(gr.top_block):
 class Compass(object):
     def __init__(self, *args, **kwargs):
         self.sensor = HMC5883L(args, kwargs)
-        self.x_offset = 180
-        self.y_offset = 709
+        self.x_offset = 709
+        self.y_offset = -180
         self.z_offset = 0
         self.scale = 0.92
 
@@ -169,9 +169,13 @@ class Compass(object):
         x = self.sensor.get_x()
         y = self.sensor.get_y()
         # TODO Revisit this and figure out what is going on here
-        x = (x - self.x_offset) * self.scale
-        y = (y - self.y_offset) * self.scale
+        x = (x + self.x_offset) * self.scale
+        y = (y + self.y_offset) * self.scale
         heading = math.atan2(y, x) - 0.1745329
+
+        if heading < 0:
+            heading += 2 * math.pi
+
         return heading
 
 
