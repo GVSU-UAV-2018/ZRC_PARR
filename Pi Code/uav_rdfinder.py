@@ -120,8 +120,8 @@ class UAVRadioFinder(gr.top_block):
             heading=self.get_heading())
 
     def start(self, max_noutput_items=10000000):
-        gr.top_block.start(max_noutput_items)
-        self.serial_p.start()
+        super(UAVRadioFinder, self).start(max_noutput_items)
+        self.serial_port.start()
 
     def get_heading(self):
         if self.compass is None:
@@ -148,7 +148,7 @@ class UAVRadioFinder(gr.top_block):
             self.snr_threshold = msg.snr_threshold
 
     def close(self):
-        self.serial_p.close()
+        self.serial_port.close()
 
 
 class Compass(object):
