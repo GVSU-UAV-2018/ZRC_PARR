@@ -149,7 +149,7 @@ class SerialPort(object):
         )
 
         fin_msg = self._append_crc(msg_str)
-        packet = self.pwrap(fin_msg)
+        packet = self.pwrap.wrap(fin_msg)
         self._put_message(packet)
 
     def send_scan_settings(self, gain, freq, snr):
