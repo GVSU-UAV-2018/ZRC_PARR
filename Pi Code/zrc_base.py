@@ -22,7 +22,7 @@ class SerialReadThread(threading.Thread):
 
     def join(self, timeout=None):
         self.alive.clear()
-        threading.Thread.join(self, timeout)
+        super(SerialReadThread, self).Thread.join(self, timeout)
 
     def run(self):
         self.alive.set()
@@ -79,7 +79,7 @@ class SerialWriteThread(threading.Thread):
 
     def join(self, timeout=None):
         self.alive.clear()
-        threading.Thread.join(timeout)
+        super(SerialWriteThread, self).join(timeout)
 
     def run(self):
         self.alive.set()
@@ -130,7 +130,7 @@ class SerialPort(object):
             print 'Output queue is full. Did not append message'
             print e.message
 
-    def _append_crc(packet):
+    def _append_crc(self, packet):
         msg_no_crc = packet[:-4]
         crc = msg_crc.build(
             Container(crc=crc32(msg_no_crc))
