@@ -19,8 +19,8 @@ def receive_loop(in_q):
             if msg is not None:
                 if msg_id_to_type[msg.msg_id] == 'attitude' and suppress is False:
                     print "Received ATTITUDE packet"
-                    print "altitude: {0}" % str(type(msg.altitude))
-                    print "heading: {0}" % str(type(msg.heading))
+                    print "altitude: {0}" % str(msg.altitude)
+                    print "heading: {0}" % str(msg.heading)
                     print "---------------------"
                 elif msg_id_to_type[msg.msg_id] == 'detection' and suppress is False:
                     print "Received DETECTION packet"
