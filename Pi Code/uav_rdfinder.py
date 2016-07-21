@@ -16,6 +16,10 @@ import time
 import math
 import Adafruit_BMP.BMP085 as BMP085
 from zrc_base import SerialPort, msg_id_to_type
+from pubsub import publish
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 class UAVRadioFinder(gr.top_block):
@@ -49,6 +53,7 @@ class UAVRadioFinder(gr.top_block):
         self._create_gr_blocks(kwargs.get('sample_rate', 192000))
         self._connect_gr_blocks()
         # TODO Subscribe to event here which gets published from Burst_detection and store bursts
+        publish.subscribe(self._handle_detection, 'detection')
 
     def _create_gr_blocks(self, sample_rate):
         self.fft_vxx_0 = fft.fft_vfc(512, True, (window.rectangular(512)), 1)
@@ -103,6 +108,9 @@ class UAVRadioFinder(gr.top_block):
     def snr_threshold(self, val):
         self._snr_threshold = val
 
+    def _handle_detection(self):
+        pass
+
     def is_scanning(self):
         return self.scanning
 
@@ -154,8 +162,8 @@ class UAVRadioFinder(gr.top_block):
 class Compass(object):
     def __init__(self, *args, **kwargs):
         self.sensor = HMC5883L(args, kwargs)
-        self.x_offset = 180
-        self.y_offset = 709
+        self.x_offset = 709
+        self.y_offset = -180
         self.z_offset = 0
         self.scale = 0.92
 
@@ -169,9 +177,13 @@ class Compass(object):
         x = self.sensor.get_x()
         y = self.sensor.get_y()
         # TODO Revisit this and figure out what is going on here
-        x = (x - self.x_offset) * self.scale
-        y = (y - self.y_offset) * self.scale
+        x = (x + self.x_offset) * self.scale
+        y = (y + self.y_offset) * self.scale
         heading = math.atan2(y, x) - 0.1745329
+
+        if heading < 0:
+            heading += 2 * math.pi
+
         return heading
 
 
@@ -273,6 +285,8 @@ if __name__ == '__main__':
     if gr.enable_realtime_scheduling() != gr.RT_OK:
         print 'Error: failed to enable real time scheduling'
 
+    import logging.config
+    logging.config.fileConfig('')
     main_loop()
 
 
