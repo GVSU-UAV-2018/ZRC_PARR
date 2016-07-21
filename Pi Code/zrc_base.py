@@ -6,6 +6,9 @@ from zlib import crc32
 from protocolwrapper import ProtocolWrapper, ProtocolStatus
 from construct import Struct, SLInt32, ULInt32, ULInt16, Flag, Embed, LFloat32, Container
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class SerialReadThread(threading.Thread):
     def __init__(self, in_q, serial_p):

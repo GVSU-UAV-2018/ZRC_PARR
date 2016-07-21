@@ -3,6 +3,9 @@ import Queue
 import threading
 import time
 
+import logging
+logger = logging.getLogger(__name__)
+
 global alive
 alive = threading.Event()
 global suppress
@@ -34,16 +37,23 @@ def receive_loop(in_q):
             continue
 
 if __name__ == '__main__':
+    import logging.handlers
+
+    logging.basicConfig(filename='log_test.out', level=logging.DEBUG)
+    log_handler = logging.handlers.RotatingFileHandler('log_test.out', backupCount=10)
+    logger.addHandler(log_handler)
+    logger.debug('Logger configured')
     global suppress
     input_q = Queue.Queue()
     output_q = Queue.Queue()
 
-    serial_port = SerialPort(in_q=input_q, output_q=output_q, port="COM10")
+    serial_port = SerialPort(in_q=input_q, output_q=output_q, port='/dev/ttyUSB0')
     serial_port.start()
 
     receive_thread = threading.Thread(target=receive_loop, args=(input_q,))
     receive_thread.daemon = True
     receive_thread.start()
+    logger.debug('Receive thread started')
 
 
     while True:
@@ -61,4 +71,8 @@ if __name__ == '__main__':
         serial_port.send_scanning(scanning=1)
         time.sleep(1)
 
+    global alive
+    alive.clear()
     receive_thread.join(timeout=0.2)
+    serial_port.close()
+    logger.debug('Exiting ground mock')

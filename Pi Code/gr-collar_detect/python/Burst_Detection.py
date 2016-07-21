@@ -27,6 +27,7 @@ from scipy import fftpack
 from scipy import stats
 from scipy import signal
 from gnuradio import gr
+from pubsub import publish
 
 i = 0
 var_avg = 0.0
@@ -91,11 +92,13 @@ class Burst_Detection(gr.sync_block):
 			i = 0
 
 		if(noise_var > self.SNR*var_avg):
-			#if there is a change in state of scanning, and it was not scanning prior
+			publish.sendMessage('detection')
+			#Starting a scan (clear necessary variables)
 			if((self.scanning != prv_scanning) and (prv_scanning == 0)):
 				v_avg = numpy.array([0.0,0.0])
 				num_detections = 0.0
 				prv_scanning = self.scanning
+			# Ending a scan (calculate detection magnitude and angle)
 			elif((self.scanning != prv_scanning) and (prv_scanning == 1)):
 				v_avg = v_avg / num_detections
 				detection_mag = numpy.linalg.norm(v_avg)
@@ -107,6 +110,7 @@ class Burst_Detection(gr.sync_block):
 					prv_scanning = self.scanning
 			else:
 				prv_scanning = self.scanning
+
 			if(self.scanning == 1):
 				v_avg = v_avg + numpy.array([numpy.max(noise_norm)*math.cos(self.bearing),numpy.max(noise_norm)*math.sin(self.bearing)])
 				num_detections += 1.0

@@ -22,7 +22,7 @@ class SerialReadThread(threading.Thread):
 
     def join(self, timeout=None):
         self.alive.clear()
-        super(SerialReadThread, self).Thread.join(self, timeout)
+        super(SerialReadThread, self).join(timeout=timeout)
 
     def run(self):
         self.alive.set()
