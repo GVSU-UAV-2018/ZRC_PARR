@@ -287,7 +287,7 @@ if __name__ == '__main__':
         print 'Error: failed to enable real time scheduling'
 
     import logging.config
-    logging.config.fileConfig('')
+    #logging.config.fileConfig('')
     main_loop()
 
 
