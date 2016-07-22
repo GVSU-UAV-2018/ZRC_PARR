@@ -271,7 +271,7 @@ def main_loop():
     output_q = Queue.Queue()
     serial_port = SerialPort(in_q=input_q, out_q=output_q, port='/dev/ttyAMA0')
 
-    rdf = UAVRadioFinder(serial_port=serial_port)
+    rdf = UAVRadioFinder(serial_port=serial_port, scan_frequency = 150.742800)
     rdf.start()
 
     while True:
