@@ -64,7 +64,7 @@ class UAVRadioFinder(gr.top_block):
         self.fcdproplus_fcdproplus_0.set_freq_corr(0)
         self.fcdproplus_fcdproplus_0.set_freq(self.scan_frequency - self.freq_offset)
 
-        self.collar_detect_collar_detect_0 = collar_detect.collar_detect(self.snr_threshold)
+        self.collar_detect_collar_detect_0 = collar_detect.collar_detect()
         self.blocks_stream_to_vector_0 = blocks.stream_to_vector(gr.sizeof_float*1, 512)
         self.blocks_multiply_xx_0 = blocks.multiply_vcc(512)
         self.blocks_complex_to_real_0 = blocks.complex_to_real(1)
