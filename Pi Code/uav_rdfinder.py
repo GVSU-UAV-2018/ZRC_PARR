@@ -38,7 +38,7 @@ class UAVRadioFinder(gr.top_block):
         gr.top_block.__init__(self, "UAV Radio Finder")
         # kwargs.get(<named variable name>, <default value if None>)
         self._gain = kwargs.get('gain', 20)
-        self._scan_frequency = kwargs.get('scan_frequency', 150.096e6)
+        self._scan_frequency = kwargs.get('scan_frequency', 150.742800)
         self._snr_threshold = kwargs.get('snr_threshold', 5.0)
 
         self.serial_port = kwargs.get('serial_port', None)
@@ -50,7 +50,7 @@ class UAVRadioFinder(gr.top_block):
         self.altimeter = kwargs.get('altimeter', BarometerSensor())
         self.compass = kwargs.get('compass', Compass())
         
-        self._create_gr_blocks(kwargs.get('sample_rate', 192000))
+        self._create_gr_blocks(kwargs.get('sample_rate', 96000))
         self._connect_gr_blocks()
         # TODO Subscribe to event here which gets published from Burst_detection and store bursts
         pub.subscribe(self._handle_detection, 'detection')
