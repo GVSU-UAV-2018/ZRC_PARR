@@ -16,7 +16,7 @@ import time
 import math
 import Adafruit_BMP.BMP085 as BMP085
 from zrc_base import SerialPort, msg_id_to_type
-from pubsub import publish
+from pubsub import pub
 
 import logging
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ class UAVRadioFinder(gr.top_block):
         self._create_gr_blocks(kwargs.get('sample_rate', 192000))
         self._connect_gr_blocks()
         # TODO Subscribe to event here which gets published from Burst_detection and store bursts
-        publish.subscribe(self._handle_detection, 'detection')
+        pub.subscribe(self._handle_detection, 'detection')
 
     def _create_gr_blocks(self, sample_rate):
         self.fft_vxx_0 = fft.fft_vfc(512, True, (window.rectangular(512)), 1)
