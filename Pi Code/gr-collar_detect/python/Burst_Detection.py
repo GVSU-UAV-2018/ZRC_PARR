@@ -27,7 +27,7 @@ from scipy import fftpack
 from scipy import stats
 from scipy import signal
 from gnuradio import gr
-from pubsub import publish
+from pubsub import pub
 
 i = 0
 var_avg = 0.0
@@ -52,67 +52,67 @@ class Burst_Detection(gr.sync_block):
             name="Burst_Detection",
             in_sig=[(numpy.float32,512)],
             out_sig=None)
-		self.SNR = SNR
-		self.scanning = 0
+        self.SNR = SNR
+        self.scanning = 0
 
     def update_snr(self, SNR):
-		self.SNR = SNR
+        self.SNR = SNR
 
     def update_scanning(self,scanning,bearing):
-		self.scanning = scanning
-		self.bearing = bearing
+        self.scanning = scanning
+        self.bearing = bearing
 
     def get_detection(self):
-		global detection
-		return detection
+        global detection
+        return detection
 
     def work(self, input_items, output_items):
         global var_avg
-		global min_bin
-		global max_bin
-		global average_mag
-		global i
-		global var_avg_temp
-		in0 = input_items[0]
-		global v_avg
-		global detection
-		global prv_scanning
-		global num_detections
+        global min_bin
+        global max_bin
+        global average_mag
+        global i
+        global var_avg_temp
+        in0 = input_items[0]
+        global v_avg
+        global detection
+        global prv_scanning
+        global num_detections
 
-		noise_mean = numpy.mean(in0[0][min_bin:max_bin])
-		noise_norm = numpy.asarray(in0[0][min_bin:max_bin]) - noise_mean
-		noise_var = numpy.var(noise_norm)
+        noise_mean = numpy.mean(in0[0][min_bin:max_bin])
+        noise_norm = numpy.asarray(in0[0][min_bin:max_bin]) - noise_mean
+        noise_var = numpy.var(noise_norm)
 
-		if(i<31):
-			var_avg_temp = var_avg_temp + noise_var
-			i = i + 1
-		else:
-			var_avg = var_avg_temp / 31
-			var_avg_temp = 0.0
-			i = 0
+        if(i<31):
+            var_avg_temp = var_avg_temp + noise_var
+            i = i + 1
+        else:
+            var_avg = var_avg_temp / 31
+            var_avg_temp = 0.0
+            i = 0
 
-		if(noise_var > self.SNR*var_avg):
-			publish.sendMessage('detection')
-			#Starting a scan (clear necessary variables)
-			if((self.scanning != prv_scanning) and (prv_scanning == 0)):
-				v_avg = numpy.array([0.0,0.0])
-				num_detections = 0.0
-				prv_scanning = self.scanning
-			# Ending a scan (calculate detection magnitude and angle)
-			elif((self.scanning != prv_scanning) and (prv_scanning == 1)):
-				v_avg = v_avg / num_detections
-				detection_mag = numpy.linalg.norm(v_avg)
-				detection_ang = numpy.arctan2(v_avg[1],v_avg[0])
-				if (detection_ang < 0):
-					detection_ang += 2 * math.pi
-					detection_ang = math.degrees(detection_ang)
-					detection = numpy.array([detection_mag, detection_ang])
-					prv_scanning = self.scanning
-			else:
-				prv_scanning = self.scanning
+        if(noise_var > self.SNR*var_avg):
+            pub.sendMessage('detection')
+            #Starting a scan (clear necessary variables)
+            if((self.scanning != prv_scanning) and (prv_scanning == 0)):
+                v_avg = numpy.array([0.0,0.0])
+                num_detections = 0.0
+                prv_scanning = self.scanning
+            # Ending a scan (calculate detection magnitude and angle)
+            elif((self.scanning != prv_scanning) and (prv_scanning == 1)):
+                v_avg = v_avg / num_detections
+                detection_mag = numpy.linalg.norm(v_avg)
+                detection_ang = numpy.arctan2(v_avg[1],v_avg[0])
+                if (detection_ang < 0):
+                    detection_ang += 2 * math.pi
+                    detection_ang = math.degrees(detection_ang)
+                    detection = numpy.array([detection_mag, detection_ang])
+                    prv_scanning = self.scanning
+            else:
+                prv_scanning = self.scanning
 
-			if(self.scanning == 1):
-				v_avg = v_avg + numpy.array([numpy.max(noise_norm)*math.cos(self.bearing),numpy.max(noise_norm)*math.sin(self.bearing)])
-				num_detections += 1.0
+            if(self.scanning == 1):
+                v_avg = v_avg + numpy.array([numpy.max(noise_norm)*math.cos(self.bearing),numpy.max(noise_norm)*math.sin(self.bearing)])
+                num_detections += 1.0
 
-		return len(input_items[0])
+        return len(input_items[0])
