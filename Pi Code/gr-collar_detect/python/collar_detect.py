@@ -71,8 +71,7 @@ class collar_detect(gr.sync_block):
             i = 0
 
         if(noise_var > 5*var_avg):
-            #pub.sendMessage('detection')
-            #print numpy.max(noise_norm)
+            pub.sendMessage('detection')
+            print numpy.max(noise_norm)
 
         return len(input_items[0])
-
