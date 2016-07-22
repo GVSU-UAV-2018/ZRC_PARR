@@ -16,7 +16,7 @@ import time
 import math
 import Adafruit_BMP.BMP085 as BMP085
 from zrc_base import SerialPort, msg_id_to_type
-from pubsub import pub
+from pypubsub import pub
 
 import logging
 logger = logging.getLogger(__name__)
