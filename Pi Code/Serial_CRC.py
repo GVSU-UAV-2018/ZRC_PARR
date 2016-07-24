@@ -74,7 +74,6 @@ def receive_serial(tb):
         status = map(pw.input, byte)
         try:
             if status[-1] == ProtocolStatus.MSG_OK:
-                print "data"
                 rec_msg = pw.last_message
                 # Parse the received CRC into a 32-bit integer
                 #
@@ -85,8 +84,8 @@ def receive_serial(tb):
                 if rec_crc != calc_crc:
                     print 'Error: CRC mismatch'
                 else:
+                    print message_format.parse(rec_msg)
                     tb.update_vars(message_format.parse(rec_msg))
-                    print "Data Received"
                 msg = ''
         except:
             pass
