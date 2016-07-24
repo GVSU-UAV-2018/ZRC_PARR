@@ -58,7 +58,7 @@ write_byte(2, 0b00000000) # Continuous sampling
 
 scale = 0.92
 
-collar_freq = 150.906e6
+collar_freq = 150704800
 gain = 20
 SNR = 5.0
 scanning = False
@@ -93,6 +93,7 @@ class RDF_Detection_No_GUI(gr.top_block):
           
         self.collar_detect_Burst_Detection_0 = collar_detect.Burst_Detection(SNR)
         self.blocks_stream_to_vector_0 = blocks.stream_to_vector(gr.sizeof_float*1, 512)
+        self.blocks_udp_sink_0_0 = blocks.udp_sink(gr.sizeof_gr_complex * 1, "192.168.1.11", 1234, 1472, True)
         self.blocks_multiply_xx_0 = blocks.multiply_vcc(512)
         self.blocks_complex_to_real_0 = blocks.complex_to_real(1)
         self.blocks_complex_to_mag_0 = blocks.complex_to_mag(512)
@@ -108,6 +109,7 @@ class RDF_Detection_No_GUI(gr.top_block):
         self.connect((self.blocks_stream_to_vector_0, 0), (self.fft_vxx_0, 0))
         self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 1))
         self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 0))
+        self.connect((self.band_pass_filter_0, 0), (self.blocks_udp_sink_0_0, 0))
         self.connect((self.blocks_multiply_xx_0, 0), (self.blocks_complex_to_mag_0, 0))
         self.connect((self.blocks_complex_to_mag_0, 0), (self.collar_detect_Burst_Detection_0, 0))
 
