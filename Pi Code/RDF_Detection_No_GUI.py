@@ -145,13 +145,21 @@ class RDF_Detection_No_GUI(gr.top_block):
         SNR = snr
         print SNR
 
+    def set_scanning(self,scanning):
+        global scanning
+        scanning = scanning
+        print scanning
+
     def update_vars(self, rcvd_msg):
         global bearing
         global collar_freq
+        global scanning
         collar_freq = rcvd_msg.data[0]
+        scanning = rcvd_msg.scanning
+        print "update vars:"
+        print scanning
         self.collar_detect_Burst_Detection_0.update_SNR(rcvd_msg.data[2])
         self.collar_detect_Burst_Detection_0.update_scanning(rcvd_msg.scanning,bearing)
-        print rcvd_msg.scanning
         self.fcdproplus_fcdproplus_0.set_freq(collar_freq - 3000)
         self.fcdproplus_fcdproplus_0.set_if_gain(rcvd_msg.data[1])
 
@@ -159,12 +167,11 @@ class RDF_Detection_No_GUI(gr.top_block):
 def status_sender(tb):
     global collar_freq
     global gain
+    global scanning
     global SNR
     global bearing
     while True:
         time.sleep(.2)
-        print "status sender scanning:"
-        print scanning
         #reading for memory locations 3,7
         #180 and 709 are currently hardcoded calibrations of compass offsets with Kurt's setup
         y_out = (read_word_2c(3) - 180) * scale #y and x are uav plane
