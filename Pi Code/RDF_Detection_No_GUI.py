@@ -151,6 +151,7 @@ class RDF_Detection_No_GUI(gr.top_block):
         collar_freq = rcvd_msg.data[0]
         self.collar_detect_Burst_Detection_0.update_SNR(rcvd_msg.data[2])
         self.collar_detect_Burst_Detection_0.update_scanning(rcvd_msg.scanning,bearing)
+        print rcvd_msg.scanning,bearing
         self.fcdproplus_fcdproplus_0.set_freq(collar_freq - 3000)
         self.fcdproplus_fcdproplus_0.set_if_gain(rcvd_msg.data[1])
 
@@ -171,6 +172,8 @@ def status_sender(tb):
         if (bearing < 0):
             bearing += 2 * math.pi
         # If not scanning (scanning = 0) it sends most recent detection or sends empty data upon initialization
+        print "Compass Bearing:"
+        print bearing
         if(scanning == 0):
             detection = tb.collar_detect_Burst_Detection_0.get_detection()
 
