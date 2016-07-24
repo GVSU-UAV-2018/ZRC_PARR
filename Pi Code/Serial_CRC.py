@@ -72,6 +72,7 @@ def receive_serial(tb):
     while True:
         byte = ser.read()
         status = map(pw.input, byte)
+        print status
         try:
             if status[-1] == ProtocolStatus.MSG_OK:
                 rec_msg = pw.last_message
