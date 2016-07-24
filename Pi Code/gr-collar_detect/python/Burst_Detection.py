@@ -19,13 +19,42 @@
 # Boston, MA 02110-1301, USA.
 # 
 
-import scipy
 import numpy
 import math
-from scipy import fftpack
-from scipy import stats
-from scipy import signal
 from gnuradio import gr
+import Adafruit_BMP.BMP085 as BMP085
+
+#sensor bus library for i2c for sensor for communication between pi processor and sensor
+bus = smbus.SMBus(1)
+#Address of BMP devices
+address = 0x1e
+#sensor is altimeter and compass
+sensor = BMP085.BMP085()
+
+
+def read_byte(adr):
+    return bus.read_byte_data(address, adr)
+
+def read_word(adr):
+    high = bus.read_byte_data(address, adr)
+    low = bus.read_byte_data(address, adr+1)
+    val = (high << 8) + low
+    return val
+
+def read_word_2c(adr):
+    val = read_word(adr)
+    if (val >= 0x8000):
+        return -((65535 - val) + 1)
+    else:
+        return val
+
+def write_byte(adr, value):
+    bus.write_byte_data(address, adr, value)
+
+#Configuring the sensor
+write_byte(0, 0b01110000) # Set to 8 samples @ 15Hz
+write_byte(1, 0b00100000) # 1.3 gain LSb / Gauss 1090 (default)
+write_byte(2, 0b00000000) # Continuous sampling
 
 i = 0
 var_avg = 0.0
@@ -40,6 +69,8 @@ v_avg = numpy.array([0.0,0.0])
 detection = numpy.array([0.0,0.0])
 prv_scanning = 0
 num_detections = 0.0
+scanning = False
+bearing = 0.0
 
 class Burst_Detection(gr.sync_block):
     """
