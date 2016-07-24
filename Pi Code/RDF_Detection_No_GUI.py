@@ -140,7 +140,7 @@ class RDF_Detection_No_GUI(gr.top_block):
 
     def set_SNR(self, snr):
         global SNR
-            SNR = snr
+        SNR = snr
         print SNR
 
     def update_vars(self, rcvd_msg):
