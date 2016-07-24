@@ -84,8 +84,7 @@ def receive_serial(tb):
                 if rec_crc != calc_crc:
                     print 'Error: CRC mismatch'
                 else:
-                    print "nothing"
-                    #tb.update_vars(message_format.parse(rec_msg))
+                    tb.update_vars(message_format.parse(rec_msg))
         except:
             pass
 
