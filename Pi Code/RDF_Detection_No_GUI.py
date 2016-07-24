@@ -145,11 +145,6 @@ class RDF_Detection_No_GUI(gr.top_block):
         SNR = snr
         print SNR
 
-    def set_scanning(self,scanning):
-        global scanning
-        scanning = scanning
-        print scanning
-
     def update_vars(self, rcvd_msg):
         global bearing
         global collar_freq
