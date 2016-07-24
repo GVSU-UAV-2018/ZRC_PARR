@@ -97,7 +97,7 @@ class RDF_Detection_No_GUI(gr.top_block):
         self.blocks_complex_to_real_0 = blocks.complex_to_real(1)
         self.blocks_complex_to_mag_0 = blocks.complex_to_mag(512)
         self.band_pass_filter_0 = filter.fir_filter_ccf(12, firdes.band_pass(
-        	100, samp_rate, 2.5e3, 3.5e3, 600, firdes.WIN_RECTANGULAR, 6.76))
+            100, samp_rate, 2.5e3, 3.5e3, 600, firdes.WIN_RECTANGULAR, 6.76))
 
         ##################################################
         # Connections
@@ -142,7 +142,7 @@ class RDF_Detection_No_GUI(gr.top_block):
         global SNR
             SNR = snr
         print SNR
-	
+
     def update_vars(self, rcvd_msg):
         global bearing_deg
         global collar_freq
@@ -154,29 +154,29 @@ class RDF_Detection_No_GUI(gr.top_block):
 
 #Sending the status down to the ground (current heading (compass) and system info parameters)
 def status_sender(tb):
-	global collar_freq 
-	global gain
-	global SNR
-	global bearing
-	while True:
-		time.sleep(.2)
+    global collar_freq
+    global gain
+    global SNR
+    global bearing
+    while True:
+        time.sleep(.2)
         #reading for memory locations 3,7
         #180 and 709 are currently hardcoded calibrations of compass offsets with Kurt's setup
-		y_out = (read_word_2c(3) - 180) * scale #y and x are uav plane
-		x_out = (read_word_2c(7) + 709) * scale
-		
-		bearing  = math.atan2(y_out, x_out) - .1745329 
-		if (bearing < 0):
-	    	bearing += 2 * math.pi
-		# If not scanning (scanning = 0) it sends most recent detection or sends empty data upon initialization
-		if(scanning == 0):
-			detection = tb.collar_detect_Burst_Detection_0.get_detection()
+        y_out = (read_word_2c(3) - 180) * scale #y and x are uav plane
+        x_out = (read_word_2c(7) + 709) * scale
 
-			Serial_CRC.send_serial("RPI_to_GS","DETECTION",[collar_freq,detection[1] - 178.0, detection[0]])#swapped i for collar_freq
+        bearing  = math.atan2(y_out, x_out) - .1745329
+        if (bearing < 0):
+            bearing += 2 * math.pi
+        # If not scanning (scanning = 0) it sends most recent detection or sends empty data upon initialization
+        if(scanning == 0):
+            detection = tb.collar_detect_Burst_Detection_0.get_detection()
+
+            Serial_CRC.send_serial("RPI_to_GS","DETECTION",[collar_freq,detection[1] - 178.0, detection[0]])#swapped i for collar_freq
         #So if math.degrees(bearing) is 2 degrees then the UAV is pointed south
         #This will change if the position of the compass changes orientation
         #Always sends system info
-		Serial_CRC.send_serial("RPI_to_GS","SYS_INFO",[collar_freq ,(math.degrees(bearing) - 178.0),sensor.read_altitude()])
+        Serial_CRC.send_serial("RPI_to_GS","SYS_INFO",[collar_freq ,(math.degrees(bearing) - 178.0),sensor.read_altitude()])
 
 if __name__ == '__main__':
     parser = OptionParser(option_class=eng_option, usage="%prog: [options]")
