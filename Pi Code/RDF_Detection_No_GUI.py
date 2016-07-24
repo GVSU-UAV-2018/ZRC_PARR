@@ -152,7 +152,7 @@ class RDF_Detection_No_GUI(gr.top_block):
         collar_freq = rcvd_msg.data[0]
         scanning = rcvd_msg.scanning
         self.collar_detect_Burst_Detection_0.update_SNR(rcvd_msg.data[2])
-        self.collar_detect_Burst_Detection_0.update_scanning(rcvd_msg.scanning,bearing)
+        self.collar_detect_Burst_Detection_0.update_scanning(scanning,bearing)
         self.fcdproplus_fcdproplus_0.set_freq(collar_freq - 3000)
         self.fcdproplus_fcdproplus_0.set_if_gain(rcvd_msg.data[1])
 
@@ -174,7 +174,7 @@ def status_sender(tb):
         if (bearing < 0):
             bearing += 2 * math.pi
         # If not scanning (scanning = 0) it sends most recent detection or sends empty data upon initialization
-        if(scanning == 0):
+        if(scanning == False):
             detection = tb.collar_detect_Burst_Detection_0.get_detection()
 
             Serial_CRC.send_serial("RPI_to_GS","DETECTION",[collar_freq,detection[1] - 178.0, detection[0]])#swapped i for collar_freq
