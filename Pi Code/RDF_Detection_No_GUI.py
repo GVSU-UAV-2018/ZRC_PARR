@@ -151,8 +151,6 @@ class RDF_Detection_No_GUI(gr.top_block):
         global scanning
         collar_freq = rcvd_msg.data[0]
         scanning = rcvd_msg.scanning
-        print "update vars:"
-        #print scanning
         self.collar_detect_Burst_Detection_0.update_SNR(rcvd_msg.data[2])
         self.collar_detect_Burst_Detection_0.update_scanning(rcvd_msg.scanning,bearing)
         self.fcdproplus_fcdproplus_0.set_freq(collar_freq - 3000)
