@@ -25,6 +25,7 @@ from scipy import fftpack
 from scipy import stats
 from scipy import signal
 from gnuradio import gr
+from pubsub import pub
 
 i = 0
 var_avg = 0.0
@@ -33,44 +34,44 @@ prev_time = 0.0
 collar_offset = 3000
 sample_freq_decim = 16000.0
 collar_bandwidth = 1000.0
-max_bin = int(((collar_offset+collar_bandwidth/2)/sample_freq_decim) * 512)
-min_bin = int(((collar_offset-collar_bandwidth/2)/sample_freq_decim) * 512)
+max_bin = int(((collar_offset + collar_bandwidth / 2) / sample_freq_decim) * 512)
+min_bin = int(((collar_offset - collar_bandwidth / 2) / sample_freq_decim) * 512)
 
 
 class collar_detect(gr.sync_block):
     """
     docstring for block collar_detect
     """
+
     def __init__(self):
         gr.sync_block.__init__(self,
-            name="collar_detect",
-            in_sig=[(numpy.float32,512)],
-            out_sig=None)
-
+                               name="collar_detect",
+                               in_sig=[(numpy.float32, 512)],
+                               out_sig=None)
 
     def work(self, input_items, output_items):
         global var_avg
-	global min_bin
-	global max_bin
-	global average_mag
-	global i
-	global var_avg_temp
-	in0 = input_items[0]
-	
-	noise_mean = numpy.mean(in0[0][min_bin:max_bin])
-	noise_norm = numpy.asarray(in0[0][min_bin:max_bin]) - noise_mean
-	noise_var = numpy.var(noise_norm)
-	
-	if(i<31):
-		var_avg_temp = var_avg_temp + noise_var
-		i = i + 1	
-	else:
-		var_avg = var_avg_temp / 31
-		var_avg_temp = 0.0
-		i = 0
-	
-	if(noise_var > 5*var_avg):
-		print numpy.max(noise_norm)
-	
-	return len(input_items[0])
+        global min_bin
+        global max_bin
+        global average_mag
+        global i
+        global var_avg_temp
+        in0 = input_items[0]
 
+        noise_mean = numpy.mean(in0[0][min_bin:max_bin])
+        noise_norm = numpy.asarray(in0[0][min_bin:max_bin]) - noise_mean
+        noise_var = numpy.var(noise_norm)
+
+        if (i < 31):
+            var_avg_temp = var_avg_temp + noise_var
+            i = i + 1
+        else:
+            var_avg = var_avg_temp / 31
+            var_avg_temp = 0.0
+            i = 0
+
+        if (noise_var > 5 * var_avg):
+            pub.sendMessage('detection', arg1=numpy.max(noise_norm))
+            #print numpy.max(noise_norm)
+
+        return len(input_items[0])
