@@ -108,8 +108,9 @@ class UAVRadioFinder(gr.top_block):
     def snr_threshold(self, val):
         self._snr_threshold = val
 
-    def _handle_detection(self):
-        print("Detection")
+    def _handle_detection(self, arg1):
+        print("Handle Detection")
+        print arg1
         pass
 
     def is_scanning(self):
