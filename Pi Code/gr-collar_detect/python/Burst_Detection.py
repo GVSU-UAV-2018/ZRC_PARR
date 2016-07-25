@@ -90,6 +90,10 @@ class Burst_Detection(gr.sync_block):
     def update_scanning(self,scanning,bearing):
         self.scanning = scanning
         self.bearing = bearing
+        print "Update Scanning:"
+        print self.scanning
+        print "Bearing:"
+        print self.bearing
 
     def get_detection(self):
         global detection
@@ -107,6 +111,7 @@ class Burst_Detection(gr.sync_block):
         global detection
         global prv_scanning
         global num_detections
+        global bearing
 
         noise_mean = numpy.mean(in0[0][min_bin:max_bin])
         noise_norm = numpy.asarray(in0[0][min_bin:max_bin]) - noise_mean
@@ -134,11 +139,20 @@ class Burst_Detection(gr.sync_block):
                     detection_ang += 2 * math.pi
                     detection_ang = math.degrees(detection_ang)
                     detection = numpy.array([detection_mag, detection_ang])
+                    print detection
                     prv_scanning = self.scanning
             else:
                 prv_scanning = self.scanning
             if(self.scanning == 1):
-                v_avg = v_avg + numpy.array([numpy.max(noise_norm)*math.cos(self.bearing),numpy.max(noise_norm)*math.sin(self.bearing)])
+                # reading for memory locations 3,7
+                # 180 and 709 are currently hardcoded calibrations of compass offsets with Kurt's setup
+                y_out = (read_word_2c(3) - 180) * scale  # y and x are uav plane
+                x_out = (read_word_2c(7) + 709) * scale
+
+                bearing = math.atan2(y_out, x_out) - .1745329
+                if (bearing < 0):
+                    bearing += 2 * math.pi
+                v_avg = v_avg + numpy.array([numpy.max(noise_norm)*math.cos(bearing),numpy.max(noise_norm)*math.sin(bearing)])
                 num_detections += 1.0
 
         return len(input_items[0])
