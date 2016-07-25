@@ -13,7 +13,7 @@ PROTOCOL_DLE = '\x90'
 
 # configure the serial connections (the parameters differs on the device you are connecting to)
 ser = serial.Serial(
-    port='/dev/ttyUSB0',
+    port='/dev/ttyAMA0',
     baudrate=57600,
     stopbits=serial.STOPBITS_ONE,
     bytesize=serial.EIGHTBITS,
