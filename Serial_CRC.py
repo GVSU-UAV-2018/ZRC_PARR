@@ -61,13 +61,13 @@ def send_serial(direction, data_type, data, scanning):
     ser.write(pw.wrap(msg))
 
 
-def receive_serial():        pass  # Sample: receiving a message
-ser.isOpen()
-pw = ProtocolWrapper(
-    header=PROTOCOL_HEADER,
-    footer=PROTOCOL_FOOTER,
-    dle=PROTOCOL_DLE)
-msg = ''
+def receive_serial(): # Sample: receiving a message
+    ser.isOpen()
+    pw = ProtocolWrapper(
+        header=PROTOCOL_HEADER,
+        footer=PROTOCOL_FOOTER,
+        dle=PROTOCOL_DLE)
+    msg = ''
 
 while closing == False:
     byte = ser.read()
