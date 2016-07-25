@@ -118,7 +118,7 @@ class UAVRadioFinder(gr.top_block):
 
         return self.altimeter.get_altitude()
 
-    def send_detection_msg:
+    def send_detection_msg(self):
         pass
 
 
