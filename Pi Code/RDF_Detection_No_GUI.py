@@ -99,7 +99,7 @@ class RDF_Detection_No_GUI(gr.top_block):
         self.blocks_multiply_xx_0 = blocks.multiply_vcc(512)
         self.blocks_complex_to_real_0 = blocks.complex_to_real(1)
         self.blocks_complex_to_mag_0 = blocks.complex_to_mag(512)
-        self.band_pass_filter_0 = filter.fir_filter_ccf(12, firdes.band_pass(
+        self.band_pass_filter_0 = filter.fir_filter_ccf(6, firdes.band_pass(
             100, samp_rate, 2.5e3, 3.5e3, 600, firdes.WIN_RECTANGULAR, 6.76))
 
         ##################################################
@@ -182,7 +182,7 @@ def status_sender(tb):
         # If not scanning (scanning = 0) it sends most recent detection or sends empty data upon initialization
         if(scanning == False):
             detection = 0.0
-            Serial_CRC.send_serial("RPI_to_GS","DETECTION",[collar_freq,detection - 178.0, detection])#swapped i for collar_freq
+            Serial_CRC.send_serial("RPI_to_GS","DETECTION",[collar_freq,detection - 178.0, detection)#swapped i for collar_freq
         #So if math.degrees(bearing) is 2 degrees then the UAV is pointed south
         #This will change if the position of the compass changes orientation
         #Always sends system info
