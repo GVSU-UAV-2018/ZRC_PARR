@@ -66,8 +66,8 @@ scanning = False
 bearing = 0.0
 
 
-def averaging():
-    print "detection"
+def averaging(arg1):
+    print arg1
 
 
 class RDF_Detection_No_GUI(gr.top_block):
