@@ -54,9 +54,11 @@ class collar_detect(gr.sync_block):
         global var_avg_temp
         in0 = input_items[0]
 
-        noise_mean = numpy.mean(in0[0][min_bin:max_bin])
-        noise_norm = numpy.asarray(in0[0][min_bin:max_bin]) - noise_mean
-        noise_var = numpy.var(noise_norm)
+        #noise_mean = numpy.mean(in0[0][min_bin:max_bin])
+        #noise_norm = numpy.asarray(in0[0][min_bin:max_bin]) - noise_mean
+        #noise_var = numpy.var(noise_norm)
+
+        noise_var = numpy.var(in0[0])
 
         if (i < 31):
             var_avg_temp = var_avg_temp + noise_var
@@ -66,8 +68,8 @@ class collar_detect(gr.sync_block):
             var_avg_temp = 0.0
             i = 0
 
-        if (noise_var > 3 * var_avg):
-            detected_pulse = numpy.max(noise_norm)
+        if (noise_var > 5 * var_avg):
+            detected_pulse = noise_var/var_avg
             pub.sendMessage('detection', arg1=detected_pulse)
             #print numpy.max(noise_norm)
 
