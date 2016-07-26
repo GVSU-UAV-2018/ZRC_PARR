@@ -114,9 +114,9 @@ class RDF_Detection_No_GUI(gr.top_block):
         self.connect((self.blocks_multiply_xx_0, 0), (self.blocks_complex_to_mag_0, 0))
         self.connect((self.blocks_complex_to_mag_0, 0), (self.collar_detect_Burst_Detection_0, 0))
 
-        pub.subscribe(averaging,'detection')
+        pub.subscribe(self.averaging, 'detection')
 
-    def averaging(arg1):
+    def averaging(self, arg1):
         print arg1
 
     def get_samp_rate(self):
