@@ -97,7 +97,7 @@ class RDF_Detection_No_GUI(gr.top_block):
         self.fcdproplus_fcdproplus_0.set_freq_corr(0)
         self.fcdproplus_fcdproplus_0.set_freq(collar_freq - 3000)
           
-        self.collar_detect_Burst_Detection_0 = collar_detect.Burst_Detection(SNR)
+        self.collar_detect_collar_detect_0 = collar_detect.collar_detect(SNR)
         self.blocks_stream_to_vector_0 = blocks.stream_to_vector(gr.sizeof_float*1, 512)
         self.blocks_udp_sink_0_0 = blocks.udp_sink(gr.sizeof_gr_complex * 1, "192.168.1.11", 1234, 1472, True)
         self.blocks_multiply_xx_0 = blocks.multiply_vcc(512)
@@ -117,7 +117,7 @@ class RDF_Detection_No_GUI(gr.top_block):
         self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 0))
         self.connect((self.band_pass_filter_0, 0), (self.blocks_udp_sink_0_0, 0))
         self.connect((self.blocks_multiply_xx_0, 0), (self.blocks_complex_to_mag_0, 0))
-        self.connect((self.blocks_complex_to_mag_0, 0), (self.collar_detect_Burst_Detection_0, 0))
+        self.connect((self.blocks_complex_to_mag_0, 0), (self.collar_detect_collar_detect_0, 0))
 
         pub.subscribe(averaging, 'detection')
 
@@ -158,8 +158,8 @@ class RDF_Detection_No_GUI(gr.top_block):
         global scanning
         collar_freq = rcvd_msg.data[0]
         scanning = rcvd_msg.scanning
-        self.collar_detect_Burst_Detection_0.update_SNR(rcvd_msg.data[2])
-        self.collar_detect_Burst_Detection_0.update_scanning(scanning,bearing)
+        self.collar_detect_collar_detect_0.update_SNR(rcvd_msg.data[2])
+        self.collar_detect_collar_detect_0.update_scanning(scanning,bearing)
         self.fcdproplus_fcdproplus_0.set_freq(collar_freq - 3000)
         self.fcdproplus_fcdproplus_0.set_if_gain(rcvd_msg.data[1])
 
@@ -182,7 +182,7 @@ def status_sender(tb):
             bearing += 2 * math.pi
         # If not scanning (scanning = 0) it sends most recent detection or sends empty data upon initialization
         if(scanning == False):
-            detection = tb.collar_detect_Burst_Detection_0.get_detection()
+            detection = tb.collar_detect_collar_detect_0.get_detection()
 
             Serial_CRC.send_serial("RPI_to_GS","DETECTION",[collar_freq,detection[1] - 178.0, detection[0]])#swapped i for collar_freq
         #So if math.degrees(bearing) is 2 degrees then the UAV is pointed south
