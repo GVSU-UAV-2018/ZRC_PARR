@@ -78,9 +78,9 @@ class RDF_Detection_No_GUI(gr.top_block):
         global gain
         global SNR
         self.samp_rate = samp_rate = 192000
-        self.gain = gain
-        self.collar_freq = collar_freq 
-        self.SNR = SNR
+        self.gain = gain = 20
+        self.collar_freq = collar_freq = 150.742800e6
+        self.SNR = SNR = 5
 
         ##################################################
         # Blocks
@@ -98,27 +98,27 @@ class RDF_Detection_No_GUI(gr.top_block):
         self.rtlsdr_source_0.set_antenna("", 0)
         self.rtlsdr_source_0.set_bandwidth(0, 0)
           
-        self.collar_detect_collar_detect_0 = collar_detect.collar_detect()
         self.fft_vxx_0 = fft.fft_vfc(512, True, (window.rectangular(512)), 1)
+        self.collar_detect_collar_detect_0 = collar_detect.collar_detect()
+        self.blocks_udp_sink_0_0 = blocks.udp_sink(gr.sizeof_gr_complex*1, "192.168.1.11", 1234, 1472, True)
         self.blocks_stream_to_vector_0 = blocks.stream_to_vector(gr.sizeof_float*1, 512)
-        self.blocks_udp_sink_0_0 = blocks.udp_sink(gr.sizeof_gr_complex * 1, "192.168.1.11", 1234, 1472, True)
         self.blocks_multiply_xx_0 = blocks.multiply_vcc(512)
         self.blocks_complex_to_real_0 = blocks.complex_to_real(1)
         self.blocks_complex_to_mag_0 = blocks.complex_to_mag(512)
         self.band_pass_filter_0 = filter.fir_filter_ccf(6, firdes.band_pass(
-            100, samp_rate, 2.5e3, 3.5e3, 600, firdes.WIN_RECTANGULAR, 6.76))
+        	100, samp_rate, 2.5e3, 3.5e3, 600, firdes.WIN_RECTANGULAR, 6.76))
 
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.rtlsdr_source_0, 0), (self.band_pass_filter_0, 0))
         self.connect((self.band_pass_filter_0, 0), (self.blocks_complex_to_real_0, 0))
         self.connect((self.blocks_complex_to_real_0, 0), (self.blocks_stream_to_vector_0, 0))
         self.connect((self.blocks_stream_to_vector_0, 0), (self.fft_vxx_0, 0))
         self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 1))
         self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 0))
-        self.connect((self.band_pass_filter_0, 0), (self.blocks_udp_sink_0_0, 0))
         self.connect((self.blocks_multiply_xx_0, 0), (self.blocks_complex_to_mag_0, 0))
+        self.connect((self.band_pass_filter_0, 0), (self.blocks_udp_sink_0_0, 0))
+        self.connect((self.rtlsdr_source_0, 0), (self.band_pass_filter_0, 0))
         self.connect((self.blocks_complex_to_mag_0, 0), (self.collar_detect_collar_detect_0, 0))
 
         pub.subscribe(self.averaging, 'detection')
@@ -131,7 +131,9 @@ class RDF_Detection_No_GUI(gr.top_block):
 
     def set_samp_rate(self, samp_rate):
         self.samp_rate = samp_rate
-        self.band_pass_filter_0.set_taps(firdes.band_pass(100, self.samp_rate, 2.5e3, 3.5e3, 600, firdes.WIN_RECTANGULAR, 6.76))
+        self.rtlsdr_source_0.set_sample_rate(self.samp_rate)
+        self.band_pass_filter_0.set_taps(
+            firdes.band_pass(100, self.samp_rate, 2.5e3, 3.5e3, 600, firdes.WIN_RECTANGULAR, 6.76))
 
     def get_gain(self):
         return self.gain
@@ -146,7 +148,7 @@ class RDF_Detection_No_GUI(gr.top_block):
     def set_collar_freq(self, freq):
         global collar_freq
         collar_freq = freq
-        self.fcdproplus_fcdproplus_0.set_freq(collar_freq - 3000)
+        self.rtlsdr_source_0.set_center_freq(self.collar_freq-3000, 0)
 
     def get_SNR(self):
         return self.SNR
