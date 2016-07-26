@@ -66,10 +66,6 @@ scanning = False
 bearing = 0.0
 
 
-def averaging(arg1):
-    print arg1
-
-
 class RDF_Detection_No_GUI(gr.top_block):
 
     def __init__(self):
@@ -81,7 +77,7 @@ class RDF_Detection_No_GUI(gr.top_block):
         global collar_freq
         global gain
         global SNR
-        self.samp_rate = samp_rate = 192000
+        self.samp_rate = samp_rate = 96000
         self.gain = gain
         self.collar_freq = collar_freq 
         self.SNR = SNR
@@ -119,7 +115,10 @@ class RDF_Detection_No_GUI(gr.top_block):
         self.connect((self.blocks_multiply_xx_0, 0), (self.blocks_complex_to_mag_0, 0))
         self.connect((self.blocks_complex_to_mag_0, 0), (self.collar_detect_collar_detect_0, 0))
 
-        pub.subscribe(averaging, 'detection')
+        pub.subscribe(self.averaging, 'detection')
+
+    def averaging(self, arg1):
+        print arg1
 
     def get_samp_rate(self):
         return self.samp_rate
