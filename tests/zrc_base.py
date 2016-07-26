@@ -27,8 +27,12 @@ class SerialReadThread(threading.Thread):
     def run(self):
         self.alive.set()
         while self.alive.isSet():
-            # Will block until a byte is read
+            # Should be non-blocking read call
             byte = self.serial.read(size=1)
+
+            if byte == '':
+                continue
+
             status = map(self.pwrap.input, byte)
 
             try:
@@ -88,7 +92,6 @@ class SerialWriteThread(threading.Thread):
                 msg = self.out_q.get(block=True, timeout=0.1)
                 self.serial.write(msg)
             except Queue.Empty as e:
-                print e.message
                 continue
 
 
@@ -105,7 +108,7 @@ class SerialPort(object):
 
         port = kwargs.get('port', '/dev/ttyUSB0')
         baud = kwargs.get('baud', 57600)
-        timeout = kwargs.get('timeout', None)
+        timeout = kwargs.get('timeout', 0.1)
 
         self.serial = serial.Serial(
             port=port,

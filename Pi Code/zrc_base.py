@@ -6,9 +6,6 @@ from zlib import crc32
 from protocolwrapper import ProtocolWrapper, ProtocolStatus
 from construct import Struct, SLInt32, ULInt32, ULInt16, Flag, Embed, LFloat32, Container
 
-import logging
-logger = logging.getLogger(__name__)
-
 
 class SerialReadThread(threading.Thread):
     def __init__(self, in_q, serial_p):
@@ -25,13 +22,17 @@ class SerialReadThread(threading.Thread):
 
     def join(self, timeout=None):
         self.alive.clear()
-        super(SerialReadThread, self).Thread.join(self, timeout)
+        super(SerialReadThread, self).join(timeout=timeout)
 
     def run(self):
         self.alive.set()
         while self.alive.isSet():
-            # Will block until a byte is read
+            # Should be non-blocking read call
             byte = self.serial.read(size=1)
+
+            if byte == '':
+                continue
+
             status = map(self.pwrap.input, byte)
 
             try:
@@ -91,7 +92,6 @@ class SerialWriteThread(threading.Thread):
                 msg = self.out_q.get(block=True, timeout=0.1)
                 self.serial.write(msg)
             except Queue.Empty as e:
-                print e.message
                 continue
 
 
@@ -108,7 +108,7 @@ class SerialPort(object):
 
         port = kwargs.get('port', '/dev/ttyUSB0')
         baud = kwargs.get('baud', 57600)
-        timeout = kwargs.get('timeout', None)
+        timeout = kwargs.get('timeout', 0.1)
 
         self.serial = serial.Serial(
             port=port,

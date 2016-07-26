@@ -36,6 +36,11 @@ def receive_loop(in_q):
         except Queue.Empty as e:
             continue
 
+    if not alive.isSet():
+        print 'not set'
+
+
+
 if __name__ == '__main__':
     import logging.handlers
 
@@ -76,3 +81,4 @@ if __name__ == '__main__':
     receive_thread.join(timeout=0.2)
     serial_port.close()
     logger.debug('Exiting ground mock')
+    log_handler.doRollover()
