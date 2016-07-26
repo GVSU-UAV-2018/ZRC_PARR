@@ -77,7 +77,7 @@ class RDF_Detection_No_GUI(gr.top_block):
         global collar_freq
         global gain
         global SNR
-        self.samp_rate = samp_rate = 96000
+        self.samp_rate = samp_rate = 192000
         self.gain = gain
         self.collar_freq = collar_freq 
         self.SNR = SNR
