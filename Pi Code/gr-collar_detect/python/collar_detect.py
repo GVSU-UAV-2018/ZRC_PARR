@@ -19,11 +19,7 @@
 # Boston, MA 02110-1301, USA.
 # 
 
-import scipy
 import numpy
-from scipy import fftpack
-from scipy import stats
-from scipy import signal
 from gnuradio import gr
 from pubsub import pub
 
@@ -70,8 +66,9 @@ class collar_detect(gr.sync_block):
             var_avg_temp = 0.0
             i = 0
 
-        if (noise_var > 5 * var_avg):
-            pub.sendMessage('detection')
-            print numpy.max(noise_norm)
+        if (noise_var > 3 * var_avg):
+            detected_pulse = numpy.max(noise_norm)
+            pub.sendMessage('detection', arg1=detected_pulse)
+            #print numpy.max(noise_norm)
 
         return len(input_items[0])
