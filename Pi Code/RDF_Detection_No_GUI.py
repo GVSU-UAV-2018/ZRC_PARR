@@ -18,7 +18,7 @@ from gnuradio.filter import firdes
 from optparse import OptionParser
 
 import collar_detect
-import fcdproplus
+import osmosdr
 import smbus
 from pubsub import pub
 
@@ -85,13 +85,18 @@ class RDF_Detection_No_GUI(gr.top_block):
         ##################################################
         # Blocks
         ##################################################
-        self.fft_vxx_0 = fft.fft_vfc(512, True, (window.rectangular(512)), 1)
-        self.fcdproplus_fcdproplus_0 = fcdproplus.fcdproplus("",1)
-        self.fcdproplus_fcdproplus_0.set_lna(1)
-        self.fcdproplus_fcdproplus_0.set_mixer_gain(1)
-        self.fcdproplus_fcdproplus_0.set_if_gain(gain)
-        self.fcdproplus_fcdproplus_0.set_freq_corr(0)
-        self.fcdproplus_fcdproplus_0.set_freq(collar_freq - 3000)
+        self.rtlsdr_source_0 = osmosdr.source( args="numchan=" + str(1) + " " + "" )
+        self.rtlsdr_source_0.set_sample_rate(samp_rate)
+        self.rtlsdr_source_0.set_center_freq(collar_freq-3000, 0)
+        self.rtlsdr_source_0.set_freq_corr(0, 0)
+        self.rtlsdr_source_0.set_dc_offset_mode(2, 0)
+        self.rtlsdr_source_0.set_iq_balance_mode(2, 0)
+        self.rtlsdr_source_0.set_gain_mode(True, 0)
+        self.rtlsdr_source_0.set_gain(10, 0)
+        self.rtlsdr_source_0.set_if_gain(20, 0)
+        self.rtlsdr_source_0.set_bb_gain(20, 0)
+        self.rtlsdr_source_0.set_antenna("", 0)
+        self.rtlsdr_source_0.set_bandwidth(0, 0)
           
         self.collar_detect_collar_detect_0 = collar_detect.collar_detect()
         self.blocks_stream_to_vector_0 = blocks.stream_to_vector(gr.sizeof_float*1, 512)
@@ -105,7 +110,7 @@ class RDF_Detection_No_GUI(gr.top_block):
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.fcdproplus_fcdproplus_0, 0), (self.band_pass_filter_0, 0))
+        self.connect((self.rtlsdr_source_0, 0), (self.band_pass_filter_0, 0))
         self.connect((self.band_pass_filter_0, 0), (self.blocks_complex_to_real_0, 0))
         self.connect((self.blocks_complex_to_real_0, 0), (self.blocks_stream_to_vector_0, 0))
         self.connect((self.blocks_stream_to_vector_0, 0), (self.fft_vxx_0, 0))
