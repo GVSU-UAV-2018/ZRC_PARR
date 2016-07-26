@@ -77,7 +77,7 @@ class RDF_Detection_No_GUI(gr.top_block):
         global collar_freq
         global gain
         global SNR
-        self.samp_rate = samp_rate = 96000
+        self.samp_rate = samp_rate = 192000
         self.gain = gain
         self.collar_freq = collar_freq 
         self.SNR = SNR
@@ -105,7 +105,7 @@ class RDF_Detection_No_GUI(gr.top_block):
         self.blocks_multiply_xx_0 = blocks.multiply_vcc(512)
         self.blocks_complex_to_real_0 = blocks.complex_to_real(1)
         self.blocks_complex_to_mag_0 = blocks.complex_to_mag(512)
-        self.band_pass_filter_0 = filter.fir_filter_ccf(12, firdes.band_pass(
+        self.band_pass_filter_0 = filter.fir_filter_ccf(6, firdes.band_pass(
             100, samp_rate, 2.5e3, 3.5e3, 600, firdes.WIN_RECTANGULAR, 6.76))
 
         ##################################################
