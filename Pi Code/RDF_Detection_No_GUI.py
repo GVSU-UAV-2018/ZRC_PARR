@@ -99,6 +99,7 @@ class RDF_Detection_No_GUI(gr.top_block):
         self.rtlsdr_source_0.set_bandwidth(0, 0)
           
         self.collar_detect_collar_detect_0 = collar_detect.collar_detect()
+        self.fft_vxx_0 = fft.fft_vfc(512, True, (window.rectangular(512)), 1)
         self.blocks_stream_to_vector_0 = blocks.stream_to_vector(gr.sizeof_float*1, 512)
         self.blocks_udp_sink_0_0 = blocks.udp_sink(gr.sizeof_gr_complex * 1, "192.168.1.11", 1234, 1472, True)
         self.blocks_multiply_xx_0 = blocks.multiply_vcc(512)
