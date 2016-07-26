@@ -114,7 +114,6 @@ class RDF_Detection_No_GUI(gr.top_block):
         self.connect((self.blocks_complex_to_mag_0, 0), (self.collar_detect_Burst_Detection_0, 0))
 
 
-
     def get_samp_rate(self):
         return self.samp_rate
 
