@@ -124,7 +124,9 @@ class RDF_Detection_No_GUI(gr.top_block):
         pub.subscribe(self.averaging, 'detection')
 
     def averaging(self, arg1):
+        global scanning
         print arg1
+        print scanning
 
     def get_samp_rate(self):
         return self.samp_rate
