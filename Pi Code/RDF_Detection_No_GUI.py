@@ -20,6 +20,7 @@ from optparse import OptionParser
 import collar_detect
 import fcdproplus
 import smbus
+from pubsub import pub
 
 import Adafruit_BMP.BMP085 as BMP085
 import Serial_CRC
@@ -113,6 +114,10 @@ class RDF_Detection_No_GUI(gr.top_block):
         self.connect((self.blocks_multiply_xx_0, 0), (self.blocks_complex_to_mag_0, 0))
         self.connect((self.blocks_complex_to_mag_0, 0), (self.collar_detect_Burst_Detection_0, 0))
 
+        pub.subscribe(averaging,'detection')
+
+    def averaging(arg1):
+        print arg1
 
     def get_samp_rate(self):
         return self.samp_rate
@@ -143,6 +148,7 @@ class RDF_Detection_No_GUI(gr.top_block):
         global SNR
         SNR = snr
         print SNR
+
 
     def update_vars(self, rcvd_msg):
         global bearing
