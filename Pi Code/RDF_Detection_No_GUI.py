@@ -80,7 +80,7 @@ max_bin = int(((collar_offset + collar_bandwidth / 2) / sample_freq_decim) * 512
 min_bin = int(((collar_offset - collar_bandwidth / 2) / sample_freq_decim) * 512)
 v_avg = numpy.array([0.0, 0.0])
 detection = numpy.array([0.0, 0.0])
-prv_scanning = 0
+prv_scanning = False
 num_detections = 0.0
 
 
@@ -151,13 +151,9 @@ class RDF_Detection_No_GUI(gr.top_block):
 
         print "Pulse Detection:"
         print arg1
-        print "Scanning:"
-        print scanning
-        print "Bearing:"
-        print bearing
 
         if scanning != prv_scanning:
-            if prv_scanning == 1:
+            if prv_scanning is True:
                 print "Averaging..."
                 print v_avg
                 v_avg /= num_detections
@@ -171,15 +167,15 @@ class RDF_Detection_No_GUI(gr.top_block):
                     detection_ang += 2 * math.pi
 
                 detection_ang = math.degrees(detection_ang)
-                detection = numpy.array([detection_mag, detection_ang])
+                detection = numpy.array([detection_mag, detection_ang - 178.0])
                 print "Avg Detection:"
                 print detection
-                prv_scanning = 0
+                prv_scanning = False
             else:
                 prv_scanning = scanning
         else:
             prv_scanning = scanning
-        if scanning == 1:
+        if scanning is True:
             # reading for memory locations 3,7
             # 180 and 709 are currently hardcoded calibrations of compass offsets with Kurt's setup
             y_out = (read_word_2c(3) - 180) * scale  # y and x are uav plane
@@ -274,6 +270,8 @@ def status_sender(tb):
         if scanning is False:
             Serial_CRC.send_serial("RPI_to_GS", "DETECTION",
                                    [detection[0], detection[1], collar_freq])  # swapped i for collar_freq
+            print detection[0]
+            print detection[1]
         # So if math.degrees(bearing) is 2 degrees then the UAV is pointed south
         # This will change if the position of the compass changes orientation
         # Always sends system info
