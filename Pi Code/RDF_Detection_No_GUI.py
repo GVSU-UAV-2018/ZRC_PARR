@@ -267,6 +267,7 @@ def status_sender(tb):
             bearing += 2*math.pi
 
         # If not scanning (scanning = 0) it sends most recent detection or sends empty data upon initialization
+        print scanning
         if scanning is 0:
             Serial_CRC.send_serial("RPI_to_GS", "DETECTION",
                                    [detection[0], detection[1], collar_freq])  # swapped i for collar_freq
