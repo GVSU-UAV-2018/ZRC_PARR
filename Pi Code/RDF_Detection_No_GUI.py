@@ -263,6 +263,7 @@ def status_sender(tb):
         # 180 and 709 are currently hardcoded calibrations of compass offsets with Kurt's setup
         y_out = (read_word_2c(3) - 180) * scale  # y and x are uav plane
         x_out = (read_word_2c(7) + 709) * scale
+        z_out = read_word_2c(5)
 
         print y_out
         print x_out
