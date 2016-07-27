@@ -264,6 +264,9 @@ def status_sender(tb):
         y_out = (read_word_2c(3) - 180) * scale  # y and x are uav plane
         x_out = (read_word_2c(7) + 709) * scale
 
+        print y_out
+        print x_out
+
         bearing = math.atan2(y_out, x_out) - .1745329
 
         # If not scanning (scanning = 0) it sends most recent detection or sends empty data upon initialization
