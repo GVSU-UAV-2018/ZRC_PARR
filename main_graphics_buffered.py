@@ -195,9 +195,9 @@ class TabPanel(wx.Panel):
 #Submit button handler for detection settings
     def set(self, event):
         global set_data
-        set_data[0] =  float(self.set_gain.GetValue())
-        set_data[1] =  float(self.set_freq.GetValue())
-        set_data[2] =  float(self.set_snr.GetValue())
+        set_data[0] = float(self.set_gain.GetValue())
+        set_data[1] = float(self.set_freq.GetValue())
+        set_data[2] = float(self.set_snr.GetValue())
 #Submit button for scan settings
     def submit(self, event):
         global total_countdown_tmr
