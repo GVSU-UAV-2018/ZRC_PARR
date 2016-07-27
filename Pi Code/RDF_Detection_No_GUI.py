@@ -8,6 +8,7 @@
 import math
 import threading
 import time
+import numpy
 from gnuradio import blocks
 from gnuradio import fft
 from gnuradio import filter
@@ -64,6 +65,19 @@ gain = 20
 SNR = 5.0
 scanning = False
 bearing = 0.0
+i = 0
+var_avg = 0.0
+var_avg_temp = 0.0
+prev_time = 0.0
+collar_offset = 3000
+sample_freq_decim = 16000.0
+collar_bandwidth = 1000.0
+max_bin = int(((collar_offset+collar_bandwidth/2)/sample_freq_decim) * 512)
+min_bin = int(((collar_offset-collar_bandwidth/2)/sample_freq_decim) * 512)
+v_avg = numpy.array([0.0,0.0])
+detection = numpy.array([0.0,0.0])
+prv_scanning = 0
+num_detections = 0.0
 
 
 class RDF_Detection_No_GUI(gr.top_block):
@@ -123,10 +137,35 @@ class RDF_Detection_No_GUI(gr.top_block):
 
         pub.subscribe(self.averaging, 'detection')
 
-    def averaging(self, arg1):
+    def averaging(self, pulse_snr):
         global scanning
-        print arg1
-        print scanning
+        global prv_scanning
+        global v_avg
+        global bearing
+        global num_detections
+        global prv_scanning
+        global detection
+        # if there is a change in state of scanning, and it was not scanning prior
+        if (scanning != prv_scanning) and (prv_scanning == 0):
+            v_avg = numpy.array([0.0, 0.0])
+            num_detections = 0.0
+            prv_scanning = scanning
+        elif (scanning != prv_scanning) and (prv_scanning == 1):
+            v_avg /= num_detections
+            detection_mag = numpy.linalg.norm(v_avg)
+            detection_ang = numpy.arctan2(v_avg[1], v_avg[0])
+            if detection_ang < 0:
+                detection_ang += 2 * math.pi
+                detection_ang = math.degrees(detection_ang)
+                detection = numpy.array([detection_mag, detection_ang])
+                print detection
+                prv_scanning = scanning
+        else:
+            prv_scanning = scanning
+        if scanning == 1:
+            v_avg = v_avg + numpy.array([pulse_snr * math.cos(bearing), pulse_snr * math.sin(bearing)])
+            num_detections += 1.0
+        print pulse_snr
 
     def get_samp_rate(self):
         return self.samp_rate
