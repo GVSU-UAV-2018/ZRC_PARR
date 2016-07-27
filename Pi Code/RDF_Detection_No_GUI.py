@@ -67,7 +67,7 @@ scale = 0.92
 collar_freq = 150704800
 gain = 20
 SNR = 5.0
-scanning = False
+scanning = 0
 bearing = 0.0
 i = 0
 var_avg = 0.0
@@ -80,7 +80,7 @@ max_bin = int(((collar_offset + collar_bandwidth / 2) / sample_freq_decim) * 512
 min_bin = int(((collar_offset - collar_bandwidth / 2) / sample_freq_decim) * 512)
 v_avg = numpy.array([0.0, 0.0])
 detection = numpy.array([0.0, 0.0])
-prv_scanning = False
+prv_scanning = 0
 num_detections = 0.0
 
 
@@ -153,7 +153,7 @@ class RDF_Detection_No_GUI(gr.top_block):
         print arg1
 
         if scanning != prv_scanning:
-            if prv_scanning is True:
+            if prv_scanning is 1:
                 print "Averaging..."
                 print v_avg
                 v_avg /= num_detections
@@ -170,12 +170,12 @@ class RDF_Detection_No_GUI(gr.top_block):
                 detection = numpy.array([detection_mag, detection_ang - 178.0])
                 print "Avg Detection:"
                 print detection
-                prv_scanning = False
+                prv_scanning = 0
             else:
                 prv_scanning = scanning
         else:
             prv_scanning = scanning
-        if scanning is True:
+        if scanning is 1:
             # reading for memory locations 3,7
             # 180 and 709 are currently hardcoded calibrations of compass offsets with Kurt's setup
             y_out = (read_word_2c(3) - 180) * scale  # y and x are uav plane
@@ -228,11 +228,11 @@ class RDF_Detection_No_GUI(gr.top_block):
 
         # if there is a change in state of scanning, and it was not scanning prior,
         # clear the averaging values
-        if (scanning != prv_scanning) and (prv_scanning == 0):
+        if (scanning != prv_scanning) and (prv_scanning is 0):
             v_avg = numpy.array([0.0, 0.0])
             num_detections = 0.0
             prv_scanning = scanning
-        elif (scanning != prv_scanning) and (prv_scanning == 1):
+        elif (scanning != prv_scanning) and (prv_scanning is 1):
             pub.sendMessage('detection', arg1=0.0)
         else:
             prv_scanning = scanning
@@ -267,7 +267,7 @@ def status_sender(tb):
             bearing += 2*math.pi
 
         # If not scanning (scanning = 0) it sends most recent detection or sends empty data upon initialization
-        if scanning is False:
+        if scanning is 0:
             Serial_CRC.send_serial("RPI_to_GS", "DETECTION",
                                    [detection[0], detection[1], collar_freq])  # swapped i for collar_freq
             print detection[0]
