@@ -145,23 +145,27 @@ class RDF_Detection_No_GUI(gr.top_block):
         global num_detections
         global prv_scanning
         global detection
-        # if there is a change in state of scanning, and it was not scanning prior
-        if (scanning != prv_scanning) and (prv_scanning == 0):
-            v_avg = numpy.array([0.0, 0.0])
-            num_detections = 0.0
-            prv_scanning = scanning
-            print "First Pulse"
-        elif (scanning != prv_scanning) and (prv_scanning == 1):
-            print "Last Pulse"
-            v_avg /= num_detections
-            detection_mag = numpy.linalg.norm(v_avg)
-            detection_ang = numpy.arctan2(v_avg[1], v_avg[0])
-            if detection_ang < 0:
-                detection_ang += 2 * math.pi
+
+        if scanning != prv_scanning:
+            if prv_scanning == 1:
+                print "Averaging..."
+                print v_avg
+                v_avg /= num_detections
+                print v_avg
+                detection_mag = numpy.linalg.norm(v_avg)
+                print detection_mag
+                detection_ang = numpy.arctan2(v_avg[1], v_avg[0])
+                print detection_mag
+
+                if detection_ang < 0:
+                    detection_ang += 2 * math.pi
+
                 detection_ang = math.degrees(detection_ang)
                 detection = numpy.array([detection_mag, detection_ang])
                 print "Avg Detection:"
                 print detection
+                prv_scanning = 0
+            else:
                 prv_scanning = scanning
         else:
             prv_scanning = scanning
@@ -214,6 +218,21 @@ class RDF_Detection_No_GUI(gr.top_block):
         global bearing
         global collar_freq
         global scanning
+        global prv_scanning
+        global num_detections
+        global v_avg
+
+        # if there is a change in state of scanning, and it was not scanning prior,
+        # clear the averaging values
+        if (scanning != prv_scanning) and (prv_scanning == 0):
+            v_avg = numpy.array([0.0, 0.0])
+            num_detections = 0.0
+            prv_scanning = scanning
+        elif (scanning != prv_scanning) and (prv_scanning == 1):
+            pub.sendMessage('detection', arg1=0.0)
+        else:
+            prv_scanning = scanning
+
         collar_freq = rcvd_msg.data[0]
         scanning = rcvd_msg.scanning
         self.collar_detect_collar_detect_0.update_SNR(rcvd_msg.data[2])
