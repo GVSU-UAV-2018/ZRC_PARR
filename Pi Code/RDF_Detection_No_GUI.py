@@ -23,7 +23,7 @@ import collar_detect
 import smbus
 from pubsub import pub
 
-#import Adafruit_BMP.BMP085 as BMP085
+import Adafruit_BMP.BMP085 as BMP085
 import Serial_CRC
 
 # sensor bus library for i2c for sensor for communication between pi processor and sensor
@@ -31,7 +31,7 @@ bus = smbus.SMBus(1)
 # Address of BMP devices
 address = 0x1e
 # sensor is altimeter and compass
-#sensor = BMP085.BMP085()
+sensor = BMP085.BMP085()
 
 
 def read_byte(adr):
@@ -182,10 +182,11 @@ class RDF_Detection_No_GUI(gr.top_block):
         if scanning == 1:
             # reading for memory locations 3,7
             # 180 and 709 are currently hardcoded calibrations of compass offsets with Kurt's setup
-            #y_out = (read_word_2c(3) - 180) * scale  # y and x are uav plane
-            #x_out = (read_word_2c(7) + 709) * scale
+            y_out = (read_word_2c(3) - 180) * scale  # y and x are uav plane
+            x_out = (read_word_2c(7) + 709) * scale
+            z_out = read_word_2c(5)
 
-            #bearing = math.atan2(y_out, x_out) - .1745329
+            bearing = math.atan2(y_out, x_out) - .1745329
             v_avg = v_avg + numpy.array([arg1 * math.cos(bearing), arg1 * math.sin(bearing)])
             num_detections += 1.0
 
@@ -278,7 +279,7 @@ def status_sender(tb):
         # This will change if the position of the compass changes orientation
         # Always sends system info
         Serial_CRC.send_serial("RPI_to_GS", "SYS_INFO",
-                               [collar_freq, (math.degrees(bearing) - 178.0), 0.0])#sensor.read_altitude()
+                               [collar_freq, (math.degrees(bearing) - 178.0), sensor.read_altitude()])
 
 
 if __name__ == '__main__':
