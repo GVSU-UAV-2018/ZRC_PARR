@@ -266,10 +266,9 @@ def status_sender(tb):
         x_out = (read_word_2c(7) + 709) * scale
         z_out = read_word_2c(5)
 
-        print y_out
-        print x_out
-
         bearing = math.atan2(y_out, x_out) - .1745329
+        if bearing < 0.0:
+            bearing += 2*math.pi
 
         # If not scanning (scanning = 0) it sends most recent detection or sends empty data upon initialization
         if scanning is False:
