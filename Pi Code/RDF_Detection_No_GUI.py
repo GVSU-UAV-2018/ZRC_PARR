@@ -151,7 +151,9 @@ class RDF_Detection_No_GUI(gr.top_block):
             v_avg = numpy.array([0.0, 0.0])
             num_detections = 0.0
             prv_scanning = scanning
+            print "Beginning Scan"
         elif (scanning != prv_scanning) and (prv_scanning == 1):
+            print "Ending Scan"
             v_avg /= num_detections
             detection_mag = numpy.linalg.norm(v_avg)
             detection_ang = numpy.arctan2(v_avg[1], v_avg[0])
@@ -159,13 +161,18 @@ class RDF_Detection_No_GUI(gr.top_block):
                 detection_ang += 2 * math.pi
                 detection_ang = math.degrees(detection_ang)
                 detection = numpy.array([detection_mag, detection_ang])
+                print "Avg Detection:"
                 print detection
                 prv_scanning = scanning
         else:
             prv_scanning = scanning
         if scanning == 1:
+            print "scanning"
             v_avg = v_avg + numpy.array([pulse_snr * math.cos(bearing), pulse_snr * math.sin(bearing)])
             num_detections += 1.0
+        print "Bearing:"
+        print bearing
+        print "Pulse SNR:"
         print pulse_snr
 
     def get_samp_rate(self):
