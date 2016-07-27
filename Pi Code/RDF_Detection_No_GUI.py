@@ -247,6 +247,8 @@ def status_sender(tb):
     global scanning
     global SNR
     global bearing
+    global detection
+
     while True:
         time.sleep(.2)
         #reading for memory locations 3,7
@@ -255,12 +257,11 @@ def status_sender(tb):
         x_out = (read_word_2c(7) + 709) * scale
 
         bearing  = math.atan2(y_out, x_out) - .1745329
-        if (bearing < 0):
+        if  bearing < 0:
             bearing += 2 * math.pi
         # If not scanning (scanning = 0) it sends most recent detection or sends empty data upon initialization
-        if(scanning == False):
-            detection = 0.0
-            Serial_CRC.send_serial("RPI_to_GS","DETECTION",[collar_freq,detection - 178.0, detection])#swapped i for collar_freq
+        if scanning is False:
+            Serial_CRC.send_serial("RPI_to_GS","DETECTION", [detection[0], detection[1], collar_freq])#swapped i for collar_freq
         #So if math.degrees(bearing) is 2 degrees then the UAV is pointed south
         #This will change if the position of the compass changes orientation
         #Always sends system info
