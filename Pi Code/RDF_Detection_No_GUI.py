@@ -6,9 +6,10 @@
 ##################################################
 
 import math
+import numpy
+import osmosdr
 import threading
 import time
-import numpy
 from gnuradio import blocks
 from gnuradio import fft
 from gnuradio import filter
@@ -19,11 +20,10 @@ from gnuradio.filter import firdes
 from optparse import OptionParser
 
 import collar_detect
-import osmosdr
 import smbus
 from pubsub import pub
 
-import Adafruit_BMP.BMP085 as BMP085
+#import Adafruit_BMP.BMP085 as BMP085
 import Serial_CRC
 
 # sensor bus library for i2c for sensor for communication between pi processor and sensor
@@ -31,7 +31,7 @@ bus = smbus.SMBus(1)
 # Address of BMP devices
 address = 0x1e
 # sensor is altimeter and compass
-sensor = BMP085.BMP085()
+#sensor = BMP085.BMP085()
 
 
 def read_byte(adr):
@@ -277,7 +277,7 @@ def status_sender(tb):
         # This will change if the position of the compass changes orientation
         # Always sends system info
         Serial_CRC.send_serial("RPI_to_GS", "SYS_INFO",
-                               [collar_freq, (math.degrees(bearing) - 178.0), sensor.read_altitude()])
+                               [collar_freq, (math.degrees(bearing) - 178.0), 0.0])#sensor.read_altitude()
 
 
 if __name__ == '__main__':
