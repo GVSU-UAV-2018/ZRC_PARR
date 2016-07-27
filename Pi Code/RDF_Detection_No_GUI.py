@@ -137,7 +137,8 @@ class RDF_Detection_No_GUI(gr.top_block):
 
         pub.subscribe(self.averaging, 'detection')
 
-    def averaging(self, pulse_snr):
+    def averaging(self, arg1):
+        pulse_snr = arg1
         global scanning
         global prv_scanning
         global v_avg
