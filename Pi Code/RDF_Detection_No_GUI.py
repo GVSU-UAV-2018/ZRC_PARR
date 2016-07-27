@@ -138,7 +138,6 @@ class RDF_Detection_No_GUI(gr.top_block):
         pub.subscribe(self.averaging, 'detection')
 
     def averaging(self, arg1):
-        pulse_snr = arg1
         global scanning
         global prv_scanning
         global v_avg
@@ -151,9 +150,9 @@ class RDF_Detection_No_GUI(gr.top_block):
             v_avg = numpy.array([0.0, 0.0])
             num_detections = 0.0
             prv_scanning = scanning
-            print "Beginning Scan"
+            print "First Pulse"
         elif (scanning != prv_scanning) and (prv_scanning == 1):
-            print "Ending Scan"
+            print "Last Pulse"
             v_avg /= num_detections
             detection_mag = numpy.linalg.norm(v_avg)
             detection_ang = numpy.arctan2(v_avg[1], v_avg[0])
@@ -167,13 +166,16 @@ class RDF_Detection_No_GUI(gr.top_block):
         else:
             prv_scanning = scanning
         if scanning == 1:
-            print "scanning"
-            v_avg = v_avg + numpy.array([pulse_snr * math.cos(bearing), pulse_snr * math.sin(bearing)])
+            # reading for memory locations 3,7
+            # 180 and 709 are currently hardcoded calibrations of compass offsets with Kurt's setup
+            y_out = (read_word_2c(3) - 180) * scale  # y and x are uav plane
+            x_out = (read_word_2c(7) + 709) * scale
+
+            bearing = math.atan2(y_out, x_out) - .1745329
+            if bearing < 0:
+                bearing += 2 * math.pi
+            v_avg = v_avg + numpy.array([arg1 * math.cos(bearing), arg1 * math.sin(bearing)])
             num_detections += 1.0
-        print "Bearing:"
-        print bearing
-        print "Pulse SNR:"
-        print pulse_snr
 
     def get_samp_rate(self):
         return self.samp_rate
