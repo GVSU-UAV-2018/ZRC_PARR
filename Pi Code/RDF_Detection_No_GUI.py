@@ -259,7 +259,7 @@ def status_sender(tb):
     global detection
 
     while True:
-        time.sleep(1)
+        time.sleep(.3)
         # reading for memory locations 3,7
         # 180 and 709 are currently hardcoded calibrations of compass offsets with Kurt's setup
         y_out = (read_word_2c(3) - 180) * scale  # y and x are uav plane
