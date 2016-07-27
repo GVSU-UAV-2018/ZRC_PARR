@@ -146,6 +146,13 @@ class RDF_Detection_No_GUI(gr.top_block):
         global prv_scanning
         global detection
 
+        print "Pulse Detection:"
+        print arg1
+        print "Scanning:"
+        print scanning
+        print "Bearing:"
+        print bearing
+
         if scanning != prv_scanning:
             if prv_scanning == 1:
                 print "Averaging..."
@@ -176,8 +183,6 @@ class RDF_Detection_No_GUI(gr.top_block):
             x_out = (read_word_2c(7) + 709) * scale
 
             bearing = math.atan2(y_out, x_out) - .1745329
-            if bearing < 0:
-                bearing += 2 * math.pi
             v_avg = v_avg + numpy.array([arg1 * math.cos(bearing), arg1 * math.sin(bearing)])
             num_detections += 1.0
 
@@ -257,8 +262,7 @@ def status_sender(tb):
         x_out = (read_word_2c(7) + 709) * scale
 
         bearing  = math.atan2(y_out, x_out) - .1745329
-        if  bearing < 0:
-            bearing += 2 * math.pi
+        
         # If not scanning (scanning = 0) it sends most recent detection or sends empty data upon initialization
         if scanning is False:
             Serial_CRC.send_serial("RPI_to_GS","DETECTION", [detection[0], detection[1], collar_freq])#swapped i for collar_freq
