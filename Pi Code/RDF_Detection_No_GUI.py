@@ -182,10 +182,10 @@ class RDF_Detection_No_GUI(gr.top_block):
         if scanning == 1:
             # reading for memory locations 3,7
             # 180 and 709 are currently hardcoded calibrations of compass offsets with Kurt's setup
-            y_out = (read_word_2c(3) - 180) * scale  # y and x are uav plane
-            x_out = (read_word_2c(7) + 709) * scale
+            #y_out = (read_word_2c(3) - 180) * scale  # y and x are uav plane
+            #x_out = (read_word_2c(7) + 709) * scale
 
-            bearing = math.atan2(y_out, x_out) - .1745329
+            #bearing = math.atan2(y_out, x_out) - .1745329
             v_avg = v_avg + numpy.array([arg1 * math.cos(bearing), arg1 * math.sin(bearing)])
             num_detections += 1.0
 
