@@ -5,6 +5,9 @@ import time
 import wx
 import Serial_CRC
 import threading
+import Queue
+from zrc_base import SerialInterface, MessageString, MessageType
+from pubsub import pub
 
 USE_BUFFERED_DC = True
 
@@ -426,6 +429,17 @@ def status_sender():
 
 def main():
 
+    in_q = Queue.Queue()
+    out_q = Queue.Queue()
+    serial_config = {'in_q': in_q,
+                     'out_q': out_q,
+                     'port': '/dev/ttyUSB0',
+                     'baud': 57600,
+                     'timeout': 0.05}
+    serialp = SerialPort(**serial_config)
+
+    serial_thread = threading.Thread(target=serial_main, args=(serialp,))
+
     ex = wx.App()
     main = Main_Frame(None)
     main.InitUI()
@@ -444,7 +458,23 @@ def main():
     #closing = True
     Serial_CRC.ser_close()
 
+def main_test():
+    config = {'port': '/dev/ttyUSB0',
+              'baud': 57600,
+              'timeout': 0.1}
 
+    serial = SerialInterface(**config)
+    serial.subscribe(MessageString[MessageType.attitude], handler_test)
+
+    while True:
+        user_input = raw_input("Enter input:")
+
+        if user_input == "q":
+            break
+        time.sleep(1)
+
+def handler_test(msg):
+    print("Message received: {}".format(msg))
 
 if __name__ == '__main__':
-    main()
+    main_test()
