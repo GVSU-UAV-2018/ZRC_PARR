@@ -1,6 +1,8 @@
-from zrc_base import SerialPort
 import Queue
 import time
+
+from zrc_base import SerialPort
+
 
 def main():
     port=None

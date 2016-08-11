@@ -1,13 +1,13 @@
-from wx.lib import sheet
-from math import hypot, sin, cos, pi
-import gui
+import Queue
+import threading
 import time
 import wx
+from math import sin, cos, pi
+from wx.lib import sheet
+
 import Serial_CRC
-import threading
-import Queue
-from zrc_base import SerialInterface, MessageString, MessageType
-from pubsub import pub
+import gui
+from tests.zrc_base import SerialInterface, MessageString, MessageType
 
 USE_BUFFERED_DC = True
 
@@ -463,7 +463,7 @@ def main_test():
               'baud': 57600,
               'timeout': 0.1}
 
-    serial = SerialInterface(**config)
+    serial = SerialInterface(config)
     serial.subscribe(MessageString[MessageType.attitude], handler_test)
 
     while True:

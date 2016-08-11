@@ -1,9 +1,10 @@
-from zrc_base import SerialPort, msg_id_to_type
 import Queue
+import logging
 import threading
 import time
 
-import logging
+from zrc_base import SerialPort, msg_id_to_type
+
 logger = logging.getLogger(__name__)
 
 global alive

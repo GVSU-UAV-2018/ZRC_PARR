@@ -5,7 +5,8 @@ import serial
 from zlib import crc32
 from protocolwrapper import ProtocolWrapper, ProtocolStatus
 from construct import Struct, SLInt32, ULInt32, ULInt16, Flag, Embed, LFloat32, Container
-
+import time
+from pubsub import pub
 
 class SerialReadThread(threading.Thread):
     def __init__(self, in_q, serial_p):
@@ -51,13 +52,14 @@ class SerialReadThread(threading.Thread):
     def _parse_msg(self, recv_msg):
         try:
             header = msg_header.parse(recv_msg[:2])
-            if msg_id_to_type[header.msg_id] == 'scanning':
+
+            if header.msg_id == MessageType.scanning:
                 msg = msg_scanning.parse(recv_msg)
-            elif msg_id_to_type[header.msg_id] == 'scan_settings':
+            elif header.msg_id == MessageType.scan_settings:
                 msg = msg_scan_settings.parse(recv_msg)
-            elif msg_id_to_type[header.msg_id] == 'attitude':
+            elif header.msg_id == MessageType.attitude:
                 msg = msg_attitude.parse(recv_msg)
-            elif msg_id_to_type[header.msg_id] == 'detection':
+            elif header.msg_id == MessageType.detection:
                 msg = msg_detection.parse(recv_msg)
 
             # put the given message on the queue (block and wait if full for timeout)
@@ -91,13 +93,13 @@ class SerialWriteThread(threading.Thread):
             try:
                 msg = self.out_q.get(block=True, timeout=0.1)
                 self.serial.write(msg)
+                self.out_q.task_done()
             except Queue.Empty as e:
                 continue
 
 
 class SerialPort(object):
     def __init__(self, in_q=None, out_q=None, *args, **kwargs):
-        super(SerialPort, self).__init__()
         self.in_q = in_q or Queue.Queue()
         self.out_q = out_q or Queue.Queue()
         self.pwrap = ProtocolWrapper(
@@ -204,6 +206,51 @@ class SerialPort(object):
         self.serial.close()
 
 
+class SerialInterface(SerialPort):
+    def __init__(self, config):
+        self.in_q = Queue.Queue()
+        self.out_q = Queue.Queue()
+        super(SerialInterface, self).__init__(self.in_q, self.out_q, **config)
+
+        self._poll = threading.Event()
+        self._poll.clear()
+
+        self.inbound_polling = threading.Thread(target=self._receive)
+        self.inbound_polling.daemon = True
+
+    @staticmethod
+    def subscribe(msg_name, handler):
+        pub.subscribe(handler, msg_name)
+
+    @staticmethod
+    def unsubscribe(msg_name, handler):
+        pub.unsubscribe(handler, msg_name)
+
+    def start(self):
+        # Don't do anything after start called first time
+        if self._poll.is_set():
+            return
+        self._poll.set()
+        super(SerialInterface, self).start()
+        self.inbound_polling.start()
+
+    def close(self):
+        self._poll.clear()
+        self.inbound_polling.join(timeout=0.2)
+        super(SerialInterface, self).close()
+
+    def _receive(self):
+        while self._poll.is_set():
+            try:
+                msg = self.in_q.get(block=False)
+                if msg is None:
+                    time.sleep(0.05)
+                else:
+                    pub.sendMessage(MessageString[msg.msg_id], msg)
+                    self.in_q.task_done()
+
+            except Queue.Empty:
+                time.sleep(0.05)
 
 
 PROTOCOL_HEADER = '\x11'
@@ -244,18 +291,23 @@ msg_detection = Struct('msg_detection',
                        Embed(msg_crc)
 )
 
+
+class MessageType():
+    scanning = 0
+    scan_settings = 1
+    attitude = 2
+    detection = 3
+
+MessageString = (
+    'scanning',
+    'scan_settings',
+    'attitude',
+    'detection'
+)
+
 msg_id_to_type = {
     0: 'scanning',
     1: 'scan_settings',
     2: 'attitude',
     3: 'detection'
 }
-
-if __name__ == '__main__':
-    ser = SerialPort(port='ttyAMA0')
-
-    while True:
-        ser.send_attitude(-1, -2)
-        ser.send_detection(5, 195.00)
-
-    ser.close()

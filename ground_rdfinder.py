@@ -1,7 +1,5 @@
-from zrc_base import MessageType
-import time
 import threading
-from pubsub import pub
+import time
 
 
 class GroundRadioFinder(object):
