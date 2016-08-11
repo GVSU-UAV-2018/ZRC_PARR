@@ -8,17 +8,15 @@ import logging
 
 SetDetectSettingsEvent, EVT_SET_DETECT_SETTINGS = wx.lib.newevent.NewCommandEvent()
 
-class SysInfoForm(wx.Panel):
+
+class SystemInfoViewBase(wx.Panel):
     """ Base form class for System Info controls that
         creates a bunch of controls and handlers for callbacks.
         Doing the layout of the controls is the responsibility
         of subclasses (by means of doLayout() method """
 
     def __init__(self, *args, **kwargs):
-        super(SysInfoForm, self).__init__(*args, **kwargs)
-        self.altitude = 0
-        self.bearing = 0
-        self.frequency = 0
+        super(SystemInfoViewBase, self).__init__(*args, **kwargs)
         pub.subscribe(self.update_labels, 'sys_info.update')
         self.create_controls()
         self.bind_events()
@@ -73,9 +71,9 @@ class SysInfoForm(wx.Panel):
         self.frequency_value.SetLabel(str(self.frequency) + ' MHz')
 
 
-class SystemInfoCtrl(SysInfoForm):
+class SystemInfoView(SystemInfoViewBase):
     def __init__(self, *args, **kwargs):
-        super(SystemInfoCtrl, self).__init__(*args, **kwargs)
+        super(SystemInfoView, self).__init__(*args, **kwargs)
 
     def do_layout(self):
         """ Define the layout of the controls """
@@ -96,9 +94,9 @@ class SystemInfoCtrl(SysInfoForm):
         self.SetSizerAndFit(top_sizer)
 
 
-class DetectionSettingsForm(wx.Panel):
+class DetectSettingViewBase(wx.Panel):
     def __init__(self, settings=None, *args, **kwargs):
-        super(DetectionSettingsForm, self).__init__(*args, **kwargs)
+        super(DetectSettingViewBase, self).__init__(*args, **kwargs)
         # Check if settings dictionary was passed from outside of the class
         if settings is not None:
             self.settings = settings
@@ -157,9 +155,9 @@ class DetectionSettingsForm(wx.Panel):
         return True
 
 
-class DetectionSettingsCtrl(DetectionSettingsForm):
+class DetectSettingsView(DetectSettingViewBase):
     def __init__(self, *args, **kwargs):
-        super(DetectionSettingsCtrl, self).__init__(*args, **kwargs)
+        super(DetectSettingsView, self).__init__(*args, **kwargs)
 
     def do_layout(self):
         # top level container

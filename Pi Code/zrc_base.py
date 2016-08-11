@@ -250,3 +250,12 @@ msg_id_to_type = {
     2: 'attitude',
     3: 'detection'
 }
+
+if __name__ == '__main__':
+    ser = SerialPort(port='ttyAMA0')
+
+    while True:
+        ser.send_attitude(-1, -2)
+        ser.send_detection(5, 195.00)
+
+    ser.close()

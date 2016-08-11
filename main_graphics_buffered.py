@@ -52,13 +52,13 @@ class TabPanel(wx.Panel):
             # Panel for feedback and control of system settings/ This is the entire panel which contains sys info detection settings and scan settings
             vbox = wx.BoxSizer(wx.VERTICAL)
             #child of vbox
-            self.sys_info = gui.SystemInfoCtrl(parent=self, style=wx.SUNKEN_BORDER)
+            self.sys_info = gui.SystemInfoView(parent=self, style=wx.SUNKEN_BORDER)
             self.sys_info.set_title_font(title_font)
             vbox.Add(item=self.sys_info, proportion=1, flag=wx.EXPAND | wx.ALL)
 
  # System Info Box Code END -----------------------------------------------------------------
             # configure settings
-            self.detect_settings = gui.DetectionSettingsCtrl(parent=self, style=wx.SUNKEN_BORDER)
+            self.detect_settings = gui.DetectSettingsView(parent=self, style=wx.SUNKEN_BORDER)
             self.detect_settings.set_title_font(title_font)
             vbox.Add(item=self.detect_settings, proportion=1, flag=wx.EXPAND)
 
