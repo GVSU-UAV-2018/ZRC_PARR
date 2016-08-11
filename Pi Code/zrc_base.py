@@ -94,7 +94,6 @@ class SerialWriteThread(threading.Thread):
                 msg = self.out_q.get(block=True, timeout=0.1)
                 self.serial.write(msg)
                 self.out_q.task_done()
-                print 'sent message: {}'.format(MessageString[msg.msg_id])
             except Queue.Empty as e:
                 continue
 
@@ -314,7 +313,7 @@ msg_id_to_type = {
 }
 
 if __name__ == '__main__':
-    config = {'port': '/dev/ttyAMA0',
+    config = {'port': '/dev/ttyUSB0',
               'baud': 57600,
               'timeout': 0.1}
     ser = SerialInterface(config)
