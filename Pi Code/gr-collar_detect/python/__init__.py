@@ -32,5 +32,4 @@ except ImportError:
 
 # import any pure python here
 from collar_detect import collar_detect
-from Burst_Detection import Burst_Detection
 #
