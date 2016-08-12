@@ -17,7 +17,6 @@ from gnuradio.fft import window
 from gnuradio.filter import firdes
 from optparse import OptionParser
 import osmosdr
-import time
 import fcdproplus
 import sip
 import sys
