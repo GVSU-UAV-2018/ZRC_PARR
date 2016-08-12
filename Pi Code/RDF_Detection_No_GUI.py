@@ -29,7 +29,7 @@ import time
 import math
 import collar_detect
 import smbus
-import analog
+from gnuradio import analog
 from pubsub import pub
 
 import Adafruit_BMP.BMP085 as BMP085
