@@ -112,7 +112,6 @@ class RDF_Detection_No_GUI(gr.top_block):
         ##################################################
 
         self.rtlsdr_source_0 = osmosdr.source(args="numchan=" + str(1) + " " + "")
-        self.rtlsdr_source_0.set_time_now(osmosdr.time_spec_t(time.time()), osmosdr.ALL_MBOARDS)
         self.rtlsdr_source_0.set_sample_rate(192000)
         self.rtlsdr_source_0.set_center_freq(150742800, 0)
         self.rtlsdr_source_0.set_freq_corr(0, 0)
