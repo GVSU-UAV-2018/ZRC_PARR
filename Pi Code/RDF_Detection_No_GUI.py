@@ -7,9 +7,7 @@
 
 import math
 import numpy
-import osmosdr
 import threading
-import time
 from gnuradio import blocks
 from gnuradio import fft
 from gnuradio import filter
@@ -18,6 +16,8 @@ from gnuradio.eng_option import eng_option
 from gnuradio.fft import window
 from gnuradio.filter import firdes
 from optparse import OptionParser
+import osmosdr
+import time
 
 import collar_detect
 import smbus
@@ -94,7 +94,7 @@ class RDF_Detection_No_GUI(gr.top_block):
         global collar_freq
         global gain
         global SNR
-        self.samp_rate = samp_rate = 192000
+        self.samp_rate = samp_rate = 32000
         self.gain = gain = 20
         self.collar_freq = collar_freq = 150.742800e6
         self.SNR = SNR
@@ -102,12 +102,14 @@ class RDF_Detection_No_GUI(gr.top_block):
         ##################################################
         # Blocks
         ##################################################
+
         self.rtlsdr_source_0 = osmosdr.source(args="numchan=" + str(1) + " " + "")
-        self.rtlsdr_source_0.set_sample_rate(samp_rate)
-        self.rtlsdr_source_0.set_center_freq(collar_freq - 3000, 0)
+        self.rtlsdr_source_0.set_time_now(osmosdr.time_spec_t(time.time()), osmosdr.ALL_MBOARDS)
+        self.rtlsdr_source_0.set_sample_rate(192000)
+        self.rtlsdr_source_0.set_center_freq(150742800, 0)
         self.rtlsdr_source_0.set_freq_corr(0, 0)
-        self.rtlsdr_source_0.set_dc_offset_mode(0   , 0)
-        self.rtlsdr_source_0.set_iq_balance_mode(2, 0)
+        self.rtlsdr_source_0.set_dc_offset_mode(0, 0)
+        self.rtlsdr_source_0.set_iq_balance_mode(0, 0)
         self.rtlsdr_source_0.set_gain_mode(False, 0)
         self.rtlsdr_source_0.set_gain(10, 0)
         self.rtlsdr_source_0.set_if_gain(20, 0)
@@ -115,30 +117,33 @@ class RDF_Detection_No_GUI(gr.top_block):
         self.rtlsdr_source_0.set_antenna("", 0)
         self.rtlsdr_source_0.set_bandwidth(0, 0)
 
-        self.fft_vxx_0 = fft.fft_vfc(512, True, (window.rectangular(512)), 1)
-        self.collar_detect_collar_detect_0 = collar_detect.collar_detect()
-        self.blocks_udp_sink_0_0 = blocks.udp_sink(gr.sizeof_gr_complex * 1, "192.168.1.103", 1234, 1472, True)
-        self.blocks_stream_to_vector_0 = blocks.stream_to_vector(gr.sizeof_float * 1, 512)
+        self.fft_vxx_0 = fft.fft_vcc(512, True, (window.blackmanharris(512)), True, 1)
+        self.blocks_vector_to_stream_0 = blocks.vector_to_stream(gr.sizeof_gr_complex * 1, 512)
+        self.blocks_udp_sink_0 = blocks.udp_sink(gr.sizeof_gr_complex * 1, "192.168.1.103", 1234, 1472, True)
+        self.blocks_stream_to_vector_0 = blocks.stream_to_vector(gr.sizeof_gr_complex * 1, 512)
+        self.blocks_null_sink_0 = blocks.null_sink(gr.sizeof_float * 1)
         self.blocks_multiply_xx_0 = blocks.multiply_vcc(512)
         self.blocks_complex_to_real_0 = blocks.complex_to_real(1)
-        self.blocks_complex_to_mag_0 = blocks.complex_to_mag(512)
-        self.band_pass_filter_0 = filter.fir_filter_ccf(6, firdes.band_pass(
-            100, samp_rate, 2.5e3, 3.5e3, 600, firdes.WIN_RECTANGULAR, 6.76))
+        self.band_pass_filter_0 = filter.fir_filter_ccf(4, firdes.band_pass(
+            1, 192000, 2500, 3500, 600, firdes.WIN_HAMMING, 6.76))
+        self.analog_pwr_squelch_xx_0 = analog.pwr_squelch_cc(0, 1e-4, 0, False)
+        self.collar_detect_collar_detect_0 = collar_detect.collar_detect()
 
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.band_pass_filter_0, 0), (self.blocks_complex_to_real_0, 0))
-        self.connect((self.blocks_complex_to_real_0, 0), (self.blocks_stream_to_vector_0, 0))
+        self.connect((self.analog_pwr_squelch_xx_0, 0), (self.blocks_complex_to_real_0, 0))
+        self.connect((self.analog_pwr_squelch_xx_0, 0), (self.blocks_udp_sink_0, 0))
+        self.connect((self.band_pass_filter_0, 0), (self.blocks_stream_to_vector_0, 0))
+        self.connect((self.blocks_complex_to_real_0, 0), (self.collar_detect_collar_detect_0, 0))
+        self.connect((self.blocks_multiply_xx_0, 0), (self.blocks_vector_to_stream_0, 0))
         self.connect((self.blocks_stream_to_vector_0, 0), (self.fft_vxx_0, 0))
-        self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 3))
-        self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 2))
-        self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 1))
+        self.connect((self.blocks_vector_to_stream_0, 0), (self.analog_pwr_squelch_xx_0, 0))
         self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 0))
-        self.connect((self.blocks_multiply_xx_0, 0), (self.blocks_complex_to_mag_0, 0))
-        self.connect((self.band_pass_filter_0, 0), (self.blocks_udp_sink_0_0, 0))
+        self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 1))
+        self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 2))
+        self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 3))
         self.connect((self.rtlsdr_source_0, 0), (self.band_pass_filter_0, 0))
-        self.connect((self.blocks_complex_to_mag_0, 0), (self.collar_detect_collar_detect_0, 0))
 
         pub.subscribe(self.averaging, 'detection')
 
