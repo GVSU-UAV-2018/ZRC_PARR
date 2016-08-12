@@ -1,4 +1,4 @@
-# Install script for directory: /home/pi/RDF System/gr-collar_detect/include/collar_detect
+# Install script for directory: /home/pi/ZRC_RDF/Pi Code/gr-collar_detect/include/collar_detect
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -33,6 +33,6 @@ if(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
 endif()
 
 if(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified")
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include/collar_detect" TYPE FILE FILES "/home/pi/RDF System/gr-collar_detect/include/collar_detect/api.h")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include/collar_detect" TYPE FILE FILES "/home/pi/ZRC_RDF/Pi Code/gr-collar_detect/include/collar_detect/api.h")
 endif()
 

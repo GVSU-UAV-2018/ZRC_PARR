@@ -128,7 +128,7 @@ class Burst_Detection(gr.sync_block):
         if(noise_var > self.SNR*var_avg):
             #if there is a change in state of scanning, and it was not scanning prior
             if((self.scanning != prv_scanning) and (prv_scanning == 0)):
-                v_avg = numpy.array([0.0,0.0])
+                v_avg = numpy.array([0.0, 0.0])
                 num_detections = 0.0
                 prv_scanning = self.scanning
             elif((self.scanning != prv_scanning) and (prv_scanning == 1)):

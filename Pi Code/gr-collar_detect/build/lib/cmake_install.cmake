@@ -1,4 +1,4 @@
-# Install script for directory: /home/pi/RDF System/gr-collar_detect/lib
+# Install script for directory: /home/pi/ZRC_RDF/Pi Code/gr-collar_detect/lib
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

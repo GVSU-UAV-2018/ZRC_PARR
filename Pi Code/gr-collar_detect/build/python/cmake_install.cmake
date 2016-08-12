@@ -1,4 +1,4 @@
-# Install script for directory: /home/pi/RDF System/gr-collar_detect/python
+# Install script for directory: /home/pi/ZRC_RDF/Pi Codem/gr-collar_detect/python
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -34,20 +34,20 @@ endif()
 
 if(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified")
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/python2.7/dist-packages/collar_detect" TYPE FILE FILES
-    "/home/pi/RDF System/gr-collar_detect/python/__init__.py"
-    "/home/pi/RDF System/gr-collar_detect/python/collar_detect.py"
-    "/home/pi/RDF System/gr-collar_detect/python/Burst_Detection.py"
+    "/home/pi/ZRC_RDF/Pi Codem/gr-collar_detect/python/__init__.py"
+    "/home/pi/ZRC_RDF/Pi Codem/gr-collar_detect/python/collar_detect.py"
+    "/home/pi/ZRC_RDF/Pi Codem/gr-collar_detect/python/Burst_Detection.py"
     )
 endif()
 
 if(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified")
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/python2.7/dist-packages/collar_detect" TYPE FILE FILES
-    "/home/pi/RDF System/gr-collar_detect/build/python/__init__.pyc"
-    "/home/pi/RDF System/gr-collar_detect/build/python/collar_detect.pyc"
-    "/home/pi/RDF System/gr-collar_detect/build/python/Burst_Detection.pyc"
-    "/home/pi/RDF System/gr-collar_detect/build/python/__init__.pyo"
-    "/home/pi/RDF System/gr-collar_detect/build/python/collar_detect.pyo"
-    "/home/pi/RDF System/gr-collar_detect/build/python/Burst_Detection.pyo"
+    "/home/pi/ZRC_RDF/Pi Codem/gr-collar_detect/build/python/__init__.pyc"
+    "/home/pi/ZRC_RDF/Pi Codem/gr-collar_detect/build/python/collar_detect.pyc"
+    "/home/pi/ZRC_RDF/Pi Codem/gr-collar_detect/build/python/Burst_Detection.pyc"
+    "/home/pi/ZRC_RDF/Pi Codem/gr-collar_detect/build/python/__init__.pyo"
+    "/home/pi/ZRC_RDF/Pi Codem/gr-collar_detect/build/python/collar_detect.pyo"
+    "/home/pi/ZRC_RDF/Pi Codem/gr-collar_detect/build/python/Burst_Detection.pyo"
     )
 endif()
 

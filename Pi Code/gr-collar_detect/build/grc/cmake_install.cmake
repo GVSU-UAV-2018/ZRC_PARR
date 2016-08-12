@@ -1,4 +1,4 @@
-# Install script for directory: /home/pi/RDF System/gr-collar_detect/grc
+# Install script for directory: /home/pi/ZRC_RDF/Pi Code/gr-collar_detect/grc
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -34,8 +34,8 @@ endif()
 
 if(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified")
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/gnuradio/grc/blocks" TYPE FILE FILES
-    "/home/pi/RDF System/gr-collar_detect/grc/collar_detect_collar_detect.xml"
-    "/home/pi/RDF System/gr-collar_detect/grc/collar_detect_Burst_Detection.xml"
+    "/home/pi/ZRC_RDF/Pi Code/gr-collar_detect/grc/collar_detect_collar_detect.xml"
+    "/home/pi/ZRC_RDF/Pi Code/gr-collar_detect/grc/collar_detect_Burst_Detection.xml"
     )
 endif()
 
