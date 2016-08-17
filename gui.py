@@ -8,6 +8,7 @@ import logging
 
 SetDetectSettingsEvent, EVT_SET_DETECT_SETTINGS = wx.lib.newevent.NewCommandEvent()
 
+TITLE_FONT = wx.Font(15, style=wx.NORMAL, family=wx.MODERN, weight=wx.BOLD)
 
 class SystemInfoViewBase(wx.Panel):
     """ Base form class for System Info controls that
@@ -71,9 +72,9 @@ class SystemInfoViewBase(wx.Panel):
         self.frequency_value.SetLabel(str(self.frequency) + ' MHz')
 
 
-class SystemInfoView(SystemInfoViewBase):
+class SystemInfoPanel(SystemInfoViewBase):
     def __init__(self, *args, **kwargs):
-        super(SystemInfoView, self).__init__(*args, **kwargs)
+        super(SystemInfoPanel, self).__init__(*args, **kwargs)
 
     def do_layout(self):
         """ Define the layout of the controls """
@@ -155,9 +156,9 @@ class DetectSettingViewBase(wx.Panel):
         return True
 
 
-class DetectSettingsView(DetectSettingViewBase):
+class DetectSettingsPanel(DetectSettingViewBase):
     def __init__(self, *args, **kwargs):
-        super(DetectSettingsView, self).__init__(*args, **kwargs)
+        super(DetectSettingsPanel, self).__init__(*args, **kwargs)
 
     def do_layout(self):
         # top level container
@@ -188,4 +189,114 @@ class DetectSettingsView(DetectSettingViewBase):
         # outer container holding input and submit button
         top_sizer.Add(container_grid, proportion, wx.ALL, border)
         self.SetSizer(top_sizer)
+
+
+class MainView(wx.Frame):
+    def __init__(self, *args, **kwargs):
+        super(MainView, self).__init__(*args, **kwargs)
+        # Create background panel
+        self.background = wx.Panel(self)
+        self.background.SetBackgroundColour('#4f5049')
+
+        # Create menu bar and its menu items
+        self.menu_bar = wx.MenuBar()
+        self.file_menu = wx.Menu()
+
+        # Create tab control which holds the majority of application content
+        self.tab_view = wx.Notebook(parent=self,id=wx.ID_ANY, style=wx.BK_DEFAULT)
+        # Create live scanning main page
+        self.page1 = ScanTabPanel(parent=self.tab_view, id=wx.ID_ANY)
+        self.tab_view.AddPage(self.page1)
+
+        self.do_layout()
+
+    def create_controls(self):
+        self.background = wx.Panel(self)
+
+    def bind_events(self):
+        pass
+
+    def do_layout(self):
+        # Add the exit button to the applications file menu
+        app_exit = self.file_menu.Append(id=wx.ID_EXIT, text='Exit', help='Exit Application')
+        self.file_menu.Append(app_exit)
+        self.Bind(event=wx.EVT_MENU, handler=self.on_exit, source=app_exit)
+
+        self.menu_bar.Append(self.file_menu, '&File')
+
+    def update(self):
+        pass
+
+
+class ScanTabPanel(wx.Panel):
+    def __init__(self, *args, **kwargs):
+        super(ScanTabPanel, self).__init__(*args, **kwargs)
+
+        outer_horz_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        left_sizer = wx.BoxSizer(wx.VERTICAL)
+
+        # Create system info panel
+        self.sys_info_panel = SystemInfoPanel(parent=self, style=wx.SUNKEN_BORDER)
+        self.sys_info_panel.set_title_font(TITLE_FONT)
+        left_sizer.Add(self.sys_info_panel)
+
+        # Create detection settings input control
+        self.detect_settings_panel = DetectSettingsPanel(parent=self)
+        self.detect_settings_panel.set_title_font(TITLE_FONT)
+        left_sizer.Add(self.detect_settings_panel)
+
+        self.scan_control_panel = ScanControlPanel(parent=self)
+        left_sizer.Add(self.scan_control_panel)
+
+        outer_horz_sizer.Add(item=left_sizer, proportion=1, flag=wx.EXPANDD | wx.ALL | wx.CENTER)
+
+
+class ScanControlPanel(wx.Panel):
+    def __init__(self, *args, **kwargs):
+        super(ScanControlPanel, self).__init__(*args, **kwargs)
+
+        self.SetBackgroundColour('#FFFFD6')
+        # Create labels and text controls
+        title_label = wx.StaticText(parent=self, id=wx.ID_ANY, label='SCAN SETTINGS', style=wx.ALIGN_TOP)
+        title_label.SetFont(TITLE_FONT)
+
+        timer_label = wx.StaticText(parent=self, label='Count Down:')
+        timer_txt_ctrl = wx.TextCtrl(parent=self)
+        timer_txt_ctrl.SetValue(0)
+
+        scan_label = wx.StaticText(parent=self, label='Scan Timer:')
+        scan_txt_ctrl = wx.TextCtrl(parent=self)
+        scan_txt_ctrl.SetValue(0)
+
+        # Create buttons and timer
+        self.timer = wx.Timer(self)
+        self.submit_btn = wx.Button(parent=self, id=wx.ID_ANY, label='Submit')
+        self.start_btn = wx.Button(parent=self, id=wx.ID_ANY, label='Start')
+        # Bind button and timer
+        self.Bind(event=wx.EVT_TIMER, handler=self.on_timer_tick, source=self.timer)
+        self.submit_btn.Bind(event=wx.EVT_BUTTON, handler=self.on_submit)
+        self.start_btn.Bind(event=wx.EVT_BUTTON, handler=self.on_start)
+
+        # Arranging Controls
+        inner_sizer = wx.GridSizer(rows=5, cols=1, vgap=5, hgap=5)
+        outer_sizer = wx.GridSizer(rows=1, cols=2, vgap=5, hgap=5)
+
+        for item, prop, flag, border in \
+            [(self.start_btn, 0, wx.EXPAND | wx.ALL, 5),
+             (self.inner_sizer, 0, wx.EXPAND | wx.ALL, 5)]:
+            outer_sizer.Add(item, prop, flag, border)
+
+        for item, prop, flag, border in \
+            [(timer_label, 1, wx.ALIGN_BOTTOM, 0),
+             (timer_txt_ctrl, 1, wx.EXPAND, 0),
+             (scan_label, 1, wx.EXPAND, 0),
+             (scan_txt_ctrl, 1, wx.EXPAND, 0),
+             (self.submit_btn, 1, wx.EXPAND, 0)]:
+            inner_sizer.Add(item, prop, flag, border)
+
+        panel_sizer = wx.BoxSizer(wx.VERTICAL)
+        panel_sizer.Add(item=title_label, proportion=0, flag=wx.TOP | wx.LEFT, border=20)
+        panel_sizer.Add(item=outer_sizer, proportion=0, flag=wx.EXPAND | wx.ALL, border=5 )
+        self.SetSizer(panel_sizer)
+
 

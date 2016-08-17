@@ -56,7 +56,7 @@ class SerialReadThread(threading.Thread):
             if header.msg_id == MessageType.scanning:
                 msg = msg_scanning.parse(recv_msg)
             elif header.msg_id == MessageType.scan_settings:
-                msg = msg_lsscan_settings.parse(recv_msg)
+                msg = msg_scan_settings.parse(recv_msg)
             elif header.msg_id == MessageType.attitude:
                 msg = msg_attitude.parse(recv_msg)
             elif header.msg_id == MessageType.detection:
@@ -94,7 +94,6 @@ class SerialWriteThread(threading.Thread):
                 msg = self.out_q.get(block=True, timeout=0.1)
                 self.serial.write(msg)
                 self.out_q.task_done()
-                print 'sent message'
             except Queue.Empty as e:
                 continue
 
@@ -247,7 +246,7 @@ class SerialInterface(SerialPort):
                 if msg is None:
                     time.sleep(0.05)
                 else:
-                    pub.sendMessage(MessageString[msg.msg_id], msg)
+                    pub.sendMessage(MessageString[msg.msg_id], arg1=msg)
                     self.in_q.task_done()
 
             except Queue.Empty:
@@ -312,16 +311,3 @@ msg_id_to_type = {
     2: 'attitude',
     3: 'detection'
 }
-
-if __name__ == '__main__':
-    config = {'port': '/dev/ttyUSB0',
-              'baud': 57600,
-              'timeout': 0.1}
-    ser = SerialInterface(config)
-    ser.start()
-    while True:
-        ser.send_detection(5, 183)
-        ser.send_attitude(6555, 102)
-
-    ser.close()
-
