@@ -135,7 +135,7 @@ class RDF_Detection_No_GUI(gr.top_block):
         self.blocks_complex_to_real_0 = blocks.complex_to_real(1)
         self.band_pass_filter_0 = filter.fir_filter_ccf(4, firdes.band_pass(
             1, 192000, 2500, 3500, 600, firdes.WIN_HAMMING, 6.76))
-        self.analog_pwr_squelch_xx_0 = analog.pwr_squelch_cc(-50, 1, 0, True)
+        self.analog_pwr_squelch_xx_0 = analog.pwr_squelch_cc(-100, 1, 0, True)
         self.collar_detect_collar_detect_0 = collar_detect.collar_detect()
 
         ##################################################
