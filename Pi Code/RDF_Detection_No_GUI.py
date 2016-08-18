@@ -73,7 +73,7 @@ write_byte(2, 0b00000000)  # Continuous sampling
 
 scale = 0.984
 
-collar_freq = 150704800
+collar_freq = 150704800.0
 gain = 20
 SNR = 5.0
 scanning = 0
@@ -82,7 +82,7 @@ i = 0
 var_avg = 0.0
 var_avg_temp = 0.0
 prev_time = 0.0
-collar_offset = 3000
+collar_offset = 3000.0
 sample_freq_decim = 16000.0
 collar_bandwidth = 1000.0
 max_bin = int(((collar_offset + collar_bandwidth / 2) / sample_freq_decim) * 512)
@@ -114,7 +114,7 @@ class RDF_Detection_No_GUI(gr.top_block):
 
         self.rtlsdr_source_0 = osmosdr.source(args="numchan=" + str(1) + " " + "")
         self.rtlsdr_source_0.set_sample_rate(192000)
-        self.rtlsdr_source_0.set_center_freq(150742800, 0)
+        self.rtlsdr_source_0.set_center_freq(collar_freq - collar_offset, 0)
         self.rtlsdr_source_0.set_freq_corr(0, 0)
         self.rtlsdr_source_0.set_dc_offset_mode(0, 0)
         self.rtlsdr_source_0.set_iq_balance_mode(0, 0)
