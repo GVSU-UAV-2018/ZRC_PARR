@@ -135,20 +135,20 @@ class RDF_Detection_No_GUI(gr.top_block):
         self.blocks_complex_to_real_0 = blocks.complex_to_real(1)
         self.band_pass_filter_0 = filter.fir_filter_ccf(4, firdes.band_pass(
             1, 192000, 2500, 3500, 600, firdes.WIN_HAMMING, 6.76))
-        self.analog_pwr_squelch_xx_0 = analog.pwr_squelch_cc(-150, 1, 0, False)
+        #self.analog_pwr_squelch_xx_0 = analog.pwr_squelch_cc(-150, 1, 0, False)
         self.collar_detect_collar_detect_0 = collar_detect.collar_detect()
 
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.analog_pwr_squelch_xx_0, 0), (self.blocks_complex_to_real_0, 0))
+        self.connect((self.blocks_vector_to_stream_0, 0), (self.blocks_complex_to_real_0, 0))
         self.connect((self.blocks_complex_to_real_0, 0), (self.blocks_stream_to_vector_1, 0))
         self.connect((self.band_pass_filter_0, 0), (self.blocks_udp_sink_0, 0))
         self.connect((self.band_pass_filter_0, 0), (self.blocks_stream_to_vector_0, 0))
         self.connect((self.blocks_stream_to_vector_1, 0), (self.collar_detect_collar_detect_0, 0))
         self.connect((self.blocks_multiply_xx_0, 0), (self.blocks_vector_to_stream_0, 0))
         self.connect((self.blocks_stream_to_vector_0, 0), (self.fft_vxx_0, 0))
-        self.connect((self.blocks_vector_to_stream_0, 0), (self.analog_pwr_squelch_xx_0, 0))
+        #self.connect((self.blocks_vector_to_stream_0, 0), (self.analog_pwr_squelch_xx_0, 0))
         self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 0))
         self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 1))
         self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 2))
