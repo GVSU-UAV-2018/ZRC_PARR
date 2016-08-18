@@ -25,7 +25,7 @@ from pubsub import pub
 
 i = 0
 var_avg = 0.0
-var_avg_temp = 0.0
+var_avg_temp = []
 prev_time = 0.0
 collar_offset = 3000
 sample_freq_decim = 16000.0
