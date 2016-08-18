@@ -32,6 +32,7 @@ GR_PYTHON_INSTALL(
     FILES
     __init__.py
     collar_detect.py
+    DESTINATION ${GR_PYTHON_DIR}/collar_detect
 )
 
 ########################################################################
