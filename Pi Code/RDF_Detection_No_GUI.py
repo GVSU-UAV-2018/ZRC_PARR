@@ -127,7 +127,7 @@ class RDF_Detection_No_GUI(gr.top_block):
 
         self.fft_vxx_0 = fft.fft_vcc(512, True, (window.blackmanharris(512)), True, 1)
         self.blocks_vector_to_stream_0 = blocks.vector_to_stream(gr.sizeof_gr_complex * 1, 512)
-        self.blocks_udp_sink_0 = blocks.udp_sink(gr.sizeof_gr_complex * 1, "192.168.1.103", 1234, 1472, True)
+        self.blocks_udp_sink_0 = blocks.udp_sink(gr.sizeof_gr_complex * 1, "192.168.1.21", 1234, 1472, True)
         self.blocks_stream_to_vector_1 = blocks.stream_to_vector(gr.sizeof_float * 1, 512)
         self.blocks_stream_to_vector_0 = blocks.stream_to_vector(gr.sizeof_gr_complex * 1, 512)
         self.blocks_null_sink_0 = blocks.null_sink(gr.sizeof_float * 1)
