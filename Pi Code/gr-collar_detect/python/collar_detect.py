@@ -65,7 +65,7 @@ class collar_detect(gr.sync_block):
         # overlap two windows, the two largest var_avg_temp values should be destroyed because they likely
         # are contributed from the pulse and do not truly represent the noise floor.
 
-        if i < 31:
+        if i < 310:
             var_avg_temp.append(noise_mean)
             i += 1
         else:
@@ -76,7 +76,7 @@ class collar_detect(gr.sync_block):
             var_avg_temp = []
             i = 0
 
-        if noise_mean > var_avg:
+        if noise_mean > 6.0 * var_avg:
             detected_pulse = noise_mean / var_avg
             pub.sendMessage('detection', arg1=detected_pulse)
             # print numpy.max(noise_norm)
