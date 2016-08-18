@@ -143,7 +143,7 @@ class RDF_Detection_No_GUI(gr.top_block):
         ##################################################
         self.connect((self.analog_pwr_squelch_xx_0, 0), (self.blocks_complex_to_real_0, 0))
         self.connect((self.blocks_complex_to_real_0, 0), (self.blocks_stream_to_vector_1, 0))
-        self.connect((self.analog_pwr_squelch_xx_0, 0), (self.blocks_udp_sink_0, 0))
+        self.connect((self.band_pass_filter_0, 0), (self.blocks_udp_sink_0, 0))
         self.connect((self.band_pass_filter_0, 0), (self.blocks_stream_to_vector_0, 0))
         self.connect((self.blocks_stream_to_vector_1, 0), (self.collar_detect_collar_detect_0, 0))
         self.connect((self.blocks_multiply_xx_0, 0), (self.blocks_vector_to_stream_0, 0))
