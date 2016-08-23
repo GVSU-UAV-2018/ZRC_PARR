@@ -145,8 +145,47 @@ class FrameWithForms(wx.Frame):
         self.SetClientSize(notebook.GetBestSize())
 
 
+class ParentEventTest(wx.Frame):
+    def __init__(self, *args, **kwargs):
+        super(ParentEventTest, self).__init__(*args, **kwargs)
+        self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.SetSizer(self.sizer)
+        self.child = ChildEventTest(parent=self)
+        self.sizer.Add(self.child)
+        self.Bind(wx.EVT_BUTTON, self.handler)
+
+    def handler(self, evt):
+
+        temp = evt.GetId()
+        print temp
+        btn_by_id = self.FindWindowById(temp)
+        print btn_by_id
+        print btn_by_id.GetLabel()
+        print btn_by_id.GetName()
+        print type(btn_by_id)
+        print evt.GetEventObject().GetName()
+        print 'Event was handled!'
+
+BTN1_ID = wx.ID_ANY
+BTN2_ID = wx.ID_ANY
+
+class ChildEventTest(wx.Panel):
+    def __init__(self, *args, **kwargs):
+        super(ChildEventTest, self).__init__(*args, **kwargs)
+        self.sizer = wx.GridSizer(rows=2, cols=1, vgap=2, hgap=2)
+        self.btn = wx.ToggleButton(parent=self, id=BTN1_ID, label='Test', name='TestButton1')
+        self.btn2 = wx.Button(parent=self, id=BTN2_ID, label='TwoTest')
+
+        self.sizer.Add(self.btn, 0, wx.EXPAND | wx.ALL, 5)
+        self.sizer.Add(self.btn2, 0, wx.EXPAND | wx.ALL, 5)
+        self.SetSizer(self.sizer)
+
 if __name__ == '__main__':
+    # app = wx.App(0)
+    # frame = FrameWithForms(None, title='Demo with Notebook')
+    # frame.Show()
+    # app.MainLoop()
     app = wx.App(0)
-    frame = FrameWithForms(None, title='Demo with Notebook')
+    frame = ParentEventTest(None, title='Test')
     frame.Show()
     app.MainLoop()

@@ -363,7 +363,6 @@ class Tabbed(wx.Notebook):
     """
 
     # ----------------------------------------------------------------------
-
     def __init__(self, parent):
         wx.Notebook.__init__(self, parent, id=wx.ID_ANY, style=
         wx.BK_DEFAULT

@@ -1,14 +1,15 @@
 import wx
 import wx.lib.newevent
 from pubsub import pub
-#from wx.lib.pubsub import pub
+# from wx.lib.pubsub import pub
 import threading
 import time
 import logging
 
 SetDetectSettingsEvent, EVT_SET_DETECT_SETTINGS = wx.lib.newevent.NewCommandEvent()
-
 TITLE_FONT = wx.Font(15, style=wx.NORMAL, family=wx.MODERN, weight=wx.BOLD)
+
+
 
 class SystemInfoViewBase(wx.Panel):
     """ Base form class for System Info controls that
@@ -137,6 +138,7 @@ class DetectSettingViewBase(wx.Panel):
     input boxes. Returns False and aborts entire set if any input failed to
     parse into float.
     '''
+
     def set_settings(self):
         try:
             freq = float(self.frequency_input.GetValue())
@@ -191,9 +193,138 @@ class DetectSettingsPanel(DetectSettingViewBase):
         self.SetSizer(top_sizer)
 
 
+class ScanControlPanel(wx.Panel):
+    def __init__(self, scan_data, *args, **kwargs):
+        super(ScanControlPanel, self).__init__(*args, **kwargs)
+
+        self.scan_data = scan_data
+
+        self.SetBackgroundColour('#FFFFD6')
+        # Create labels and text controls
+        title_label = wx.StaticText(parent=self, id=wx.ID_ANY, label='SCAN SETTINGS', style=wx.ALIGN_TOP)
+        title_label.SetFont(TITLE_FONT)
+
+        timer_label = wx.StaticText(parent=self, label='Count Down:')
+        self.timer_txt_ctrl = wx.TextCtrl(parent=self)
+        self.timer_txt_ctrl.SetValue(0)
+
+        scan_label = wx.StaticText(parent=self, label='Scan Timer:')
+        self.scan_txt_ctrl = wx.TextCtrl(parent=self)
+        self.scan_txt_ctrl.SetValue(0)
+
+        self.timer = wx.Timer(self)
+        self.Bind(event=wx.EVT_TIMER, handler=self.on_timer_tick, source=self.timer)
+
+        self.timer_toggle_btn = wx.Button(parent=self, id=wx.ID_ANY, label='Start')
+        self.timer_toggle_btn.Bind(event=wx.EVT_BUTTON, handler=self.on_timer_toggle)
+
+        self.submit_btn = wx.Button(parent=self, id=wx.ID_ANY, label='Submit')
+        self.submit_btn.Bind(event=wx.EVT_BUTTON, handler=self.on_submit)
+
+        # Arranging Controls
+        inner_sizer = wx.GridSizer(rows=5, cols=1, vgap=5, hgap=5)
+        outer_sizer = wx.GridSizer(rows=1, cols=2, vgap=5, hgap=5)
+
+        for item, prop, flag, border in \
+                [(self.timer_toggle_btn, 0, wx.EXPAND | wx.ALL, 5),
+                 (self.inner_sizer, 0, wx.EXPAND | wx.ALL, 5)]:
+            outer_sizer.Add(item, prop, flag, border)
+
+        for item, prop, flag, border in \
+                [(timer_label, 1, wx.ALIGN_BOTTOM, 0),
+                 (self.timer_txt_ctrl, 1, wx.EXPAND, 0),
+                 (scan_label, 1, wx.EXPAND, 0),
+                 (self.scan_txt_ctrl, 1, wx.EXPAND, 0),
+                 (self.submit_btn, 1, wx.EXPAND, 0)]:
+            inner_sizer.Add(item, prop, flag, border)
+
+        panel_sizer = wx.BoxSizer(wx.VERTICAL)
+        panel_sizer.Add(item=title_label, proportion=0, flag=wx.TOP | wx.LEFT, border=20)
+        panel_sizer.Add(item=outer_sizer, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
+        self.SetSizer(panel_sizer)
+
+    def on_timer_toggle(self, evt):
+        countdown_time = self.scan_data['countdown_time']
+        scan_time = self.scan_data['scan_time']
+        timer_started = self.scan_data['timer_started']
+
+        if timer_started is False:
+            self.timer.Start(milliseconds=1000)
+            self.timer_toggle_btn.SetLabel('Stop')
+        else:
+            self.scan_data['scan_time'] = 0.0
+            self.scan_data['countdown_time'] = self.scan_data['total_countdown_time']
+            self.timer.Stop()
+            self.timer_toggle_btn.SetLabel('Start')
+            self.Refresh()
+
+    def on_timer_tick(self, evt):
+        countdown_time = self.scan_data['countdown_time']
+        scan_time = self.scan_data['scan_time']
+
+        if countdown_time <= 0:
+            scan_time += 1.0
+            if scan_time <= self.scan_data['total_scan_time']:
+                self.Refresh(eraseBackgroundd=False)
+            else:
+                scan_time = 0.0
+                countdown_time = self.scan_data['total_countdown_time']
+                self.timer.Stop()
+                self.timer_toggle_btn.SetLabel('Start')
+        else:
+            countdown_time -= 1
+            self.Refresh(eraseBackground=False)
+
+        self.scan_data['countdown_time'] = countdown_time
+        self.scan_data['scan_time'] = scan_time
+
+    def on_submit(self, evt):
+        self.scan_data['total_countdown_time'] = int(self.timer_txt_ctrl.GetValue())
+        self.scan_data['countdown_time'] = self.scan_data['total_countdown_time']
+        self.scan_data['total_scan_time'] = float(self.scan_txt_ctrl.GetValue())
+        self.Refresh()
+
+
+class ScanRotationPane(wx.Panel):
+    def __init__(self, scan_data,*args, **kwargs):
+        super(ScanControlPanel, self).__init__(*args, **kwargs)
+        self.scan_data = scan_data
+        self.SetBackgroundColour('#E6E6E6')
+        self.Bind(wx.EVT_PAINT, self.on_paint)
+
+        self._buffer = wx.EmptyBitmap()
+        self.scan_circle = wx.BufferedPaintDC(window=self, buffer=self._buffer)
+
+    def on_paint(self, evt):
+        # Get size of client window for creating bitmap
+        win_size = self.ClientSize
+        # Bitmap backing buffer for display
+        self._buffer.SetWidth(win_size.width)
+        self._buffer.SetHeight(win_size.height)
+
+        width, height = self.GetSize()
+
+        self.scan_circle.BeginDrawing()
+        self.scan_circle.Clear()
+
+        center_x = width / 2.0
+        center_y = height / 2.0
+        radius = (width / 2.0) - 5
+
+        self.scan_circle.SetPen(wx.Pen('green', style=wx.SOLID))
+        self.scan_circle.SetBrush(wx.Brush('white', style=wx.SOLID))
+        self.scan_circle.DrawText('NORTH', center_x - 20, center_y - radius - 25.0)
+        self.scan_circle.DrawText('SOUTH', center_x - 20, center_y + radius + 10.0)
+
+        self.scan_circle.SetPen(wx.Pen('black', style=wx.SOLID))
+        self.scan_circle.DrawCircle(center_x, center_y, (radius - 1))
+
+
+
 class MainView(wx.Frame):
     def __init__(self, *args, **kwargs):
         super(MainView, self).__init__(*args, **kwargs)
+
         # Create background panel
         self.background = wx.Panel(self)
         self.background.SetBackgroundColour('#4f5049')
@@ -203,7 +334,7 @@ class MainView(wx.Frame):
         self.file_menu = wx.Menu()
 
         # Create tab control which holds the majority of application content
-        self.tab_view = wx.Notebook(parent=self,id=wx.ID_ANY, style=wx.BK_DEFAULT)
+        self.tab_view = wx.Notebook(parent=self, id=wx.ID_ANY, style=wx.BK_DEFAULT)
         # Create live scanning main page
         self.page1 = ScanTabPanel(parent=self.tab_view, id=wx.ID_ANY)
         self.tab_view.AddPage(self.page1)
@@ -232,7 +363,15 @@ class ScanTabPanel(wx.Panel):
     def __init__(self, *args, **kwargs):
         super(ScanTabPanel, self).__init__(*args, **kwargs)
 
-        outer_horz_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.scan_dict = {'countdown_time': 5,
+                          'total_countdown_time': 5,
+                           'scan_time': 0.0,
+                          'total_scan_time': 40.0,
+                           'timer_started': False,
+                          'compass_angle': 0.0,
+                          'is_scanning': False}
+
+        outer_horiz_sizer = wx.BoxSizer(wx.HORIZONTAL)
         left_sizer = wx.BoxSizer(wx.VERTICAL)
 
         # Create system info panel
@@ -245,58 +384,13 @@ class ScanTabPanel(wx.Panel):
         self.detect_settings_panel.set_title_font(TITLE_FONT)
         left_sizer.Add(self.detect_settings_panel)
 
-        self.scan_control_panel = ScanControlPanel(parent=self)
+        self.scan_control_panel = ScanControlPanel(parent=self, scan_data=self.scan_dict)
+        self.Bind(wx.EVT_TIMER)
         left_sizer.Add(self.scan_control_panel)
 
-        outer_horz_sizer.Add(item=left_sizer, proportion=1, flag=wx.EXPANDD | wx.ALL | wx.CENTER)
+        outer_horiz_sizer.Add(item=left_sizer, proportion=1, flag=wx.EXPAND | wx.ALL | wx.CENTER)
 
+    def set_bindings(self):
+        self.Bind(wx.EVT_BUTTON, button_handler)
 
-class ScanControlPanel(wx.Panel):
-    def __init__(self, *args, **kwargs):
-        super(ScanControlPanel, self).__init__(*args, **kwargs)
-
-        self.SetBackgroundColour('#FFFFD6')
-        # Create labels and text controls
-        title_label = wx.StaticText(parent=self, id=wx.ID_ANY, label='SCAN SETTINGS', style=wx.ALIGN_TOP)
-        title_label.SetFont(TITLE_FONT)
-
-        timer_label = wx.StaticText(parent=self, label='Count Down:')
-        timer_txt_ctrl = wx.TextCtrl(parent=self)
-        timer_txt_ctrl.SetValue(0)
-
-        scan_label = wx.StaticText(parent=self, label='Scan Timer:')
-        scan_txt_ctrl = wx.TextCtrl(parent=self)
-        scan_txt_ctrl.SetValue(0)
-
-        # Create buttons and timer
-        self.timer = wx.Timer(self)
-        self.submit_btn = wx.Button(parent=self, id=wx.ID_ANY, label='Submit')
-        self.start_btn = wx.Button(parent=self, id=wx.ID_ANY, label='Start')
-        # Bind button and timer
-        self.Bind(event=wx.EVT_TIMER, handler=self.on_timer_tick, source=self.timer)
-        self.submit_btn.Bind(event=wx.EVT_BUTTON, handler=self.on_submit)
-        self.start_btn.Bind(event=wx.EVT_BUTTON, handler=self.on_start)
-
-        # Arranging Controls
-        inner_sizer = wx.GridSizer(rows=5, cols=1, vgap=5, hgap=5)
-        outer_sizer = wx.GridSizer(rows=1, cols=2, vgap=5, hgap=5)
-
-        for item, prop, flag, border in \
-            [(self.start_btn, 0, wx.EXPAND | wx.ALL, 5),
-             (self.inner_sizer, 0, wx.EXPAND | wx.ALL, 5)]:
-            outer_sizer.Add(item, prop, flag, border)
-
-        for item, prop, flag, border in \
-            [(timer_label, 1, wx.ALIGN_BOTTOM, 0),
-             (timer_txt_ctrl, 1, wx.EXPAND, 0),
-             (scan_label, 1, wx.EXPAND, 0),
-             (scan_txt_ctrl, 1, wx.EXPAND, 0),
-             (self.submit_btn, 1, wx.EXPAND, 0)]:
-            inner_sizer.Add(item, prop, flag, border)
-
-        panel_sizer = wx.BoxSizer(wx.VERTICAL)
-        panel_sizer.Add(item=title_label, proportion=0, flag=wx.TOP | wx.LEFT, border=20)
-        panel_sizer.Add(item=outer_sizer, proportion=0, flag=wx.EXPAND | wx.ALL, border=5 )
-        self.SetSizer(panel_sizer)
-
-
+    def button_handler(self):

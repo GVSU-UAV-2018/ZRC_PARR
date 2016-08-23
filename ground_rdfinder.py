@@ -72,3 +72,8 @@ class GroundRadioFinder(object):
         self.scan_alive.clear()
         self.scan_thread.join(timeout=0.5)
         self.serial_com.close()
+
+
+class TimerDate(object):
+    def __init__(self):
+        self.
