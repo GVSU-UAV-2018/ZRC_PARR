@@ -1,6 +1,7 @@
 import wx
 import wx.lib.newevent
 from pubsub import pub
+import math
 # from wx.lib.pubsub import pub
 import threading
 import time
@@ -319,6 +320,49 @@ class ScanRotationPane(wx.Panel):
         self.scan_circle.SetPen(wx.Pen('black', style=wx.SOLID))
         self.scan_circle.DrawCircle(center_x, center_y, (radius - 1))
 
+        cur_scan_time = self.scan_data['scan_time']
+        total_scan_time = self.scan_data['total_scan_time']
+        compass_angle = self.scan_data['compass_angle']
+
+        # Scan angle depends on current scan time
+        angle = (cur_scan_time / total_scan_time) * 2 * math.pi
+        # How wide the target slice region is
+        slice_angle = (15.0 / 360.0) * 2 * math.pi
+
+        # Calculate line end points
+        x1 = radius * math.cos(-math.pi / 2.0 + angle - slice_angle / 2.0)
+        y1 = radius * math.sin(-math.pi / 2.0 + angle - slice_angle / 2.0)
+        # line 2
+        x2 = radius * math.cos(-math.pi / 2.0 + angle + slice_angle / 2.0)
+        y2 = radius * math.sin(-math.pi / 2.0 + angle + slice_angle / 2.0)
+        # fill point
+        x3 = radius * math.cos(-math.pi / 2.0 + angle) / 2.0
+        y3 = radius * math.sin(-math.pi / 2.0 + angle) / 2.0
+        # compass line
+        x4 = radius * math.cos(-math.pi / 2.0 + compass_angle * 2 * math.pi / 360)
+        y4 = radius * math.sin(-math.pi / 2.0 + compass_angle * 2 * math.pi / 360)
+
+        self.scan_circle.DrawLine(center_x, center_y, center_x + x1, center_y + y1)
+        self.scan_circle.DrawLine(center_x, center_y, center_x + x2, center_y + y2)
+
+        self.scan_circle.SetBrush(wx.Brush('#C2D1B2', wx.SOLID))
+        self.scan_circle.FloodFill(center_x + x3, center_y + y3, 'black', style=wx.FLOOD_BORDER)
+
+        self.scan_circle.SetPen(wx.Pen('red', style=wx.SOLID))
+        self.scan_circle.DrawLine(center_x, center_y, center_x + x4, center_y + y4)
+
+        font = wx.Font(50, style=wx.NORMAL, family=wx.MODERN, weight=wx.BOLD)
+        self.scan_circle.SetFont(font)
+
+        countdown_time = self.scan_data['countdown_time']
+        if countdown_time > 0:
+            self.scan_data['is_scanning'] = False
+            self.scan_circle.DrawText(str(countdown_time), center_x - 20, center_y - 35)
+        else:
+            self.scan_data['is_scanning'] = True
+            self.scan_circle.DrawText(str(int(total_scan_time - cur_scan_time)), center_x - 40, center_y - 35)
+
+        self.scan_circle.EndDrawing()
 
 
 class MainView(wx.Frame):
