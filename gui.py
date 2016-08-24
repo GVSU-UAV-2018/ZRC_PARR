@@ -8,7 +8,6 @@ import time
 import logging
 
 SetDetectSettingsEvent, EVT_SET_DETECT_SETTINGS = wx.lib.newevent.NewCommandEvent()
-TITLE_FONT = wx.Font(15, style=wx.NORMAL, family=wx.MODERN, weight=wx.BOLD)
 
 
 
@@ -197,7 +196,7 @@ class DetectSettingsPanel(DetectSettingViewBase):
 class ScanControlPanel(wx.Panel):
     def __init__(self, scan_data, *args, **kwargs):
         super(ScanControlPanel, self).__init__(*args, **kwargs)
-
+        TITLE_FONT = wx.Font(15, style=wx.NORMAL, family=wx.MODERN, weight=wx.BOLD)
         self.scan_data = scan_data
 
         self.SetBackgroundColour('#FFFFD6')
@@ -207,11 +206,11 @@ class ScanControlPanel(wx.Panel):
 
         timer_label = wx.StaticText(parent=self, label='Count Down:')
         self.timer_txt_ctrl = wx.TextCtrl(parent=self)
-        self.timer_txt_ctrl.SetValue(0)
+        self.timer_txt_ctrl.SetValue(str(self.scan_data['countdown_time']))
 
         scan_label = wx.StaticText(parent=self, label='Scan Timer:')
         self.scan_txt_ctrl = wx.TextCtrl(parent=self)
-        self.scan_txt_ctrl.SetValue(0)
+        self.scan_txt_ctrl.SetValue(str(self.scan_data['scan_time']))
 
         self.timer = wx.Timer(self)
         self.Bind(event=wx.EVT_TIMER, handler=self.on_timer_tick, source=self.timer)
@@ -226,10 +225,13 @@ class ScanControlPanel(wx.Panel):
         inner_sizer = wx.GridSizer(rows=5, cols=1, vgap=5, hgap=5)
         outer_sizer = wx.GridSizer(rows=1, cols=2, vgap=5, hgap=5)
 
-        for item, prop, flag, border in \
-                [(self.timer_toggle_btn, 0, wx.EXPAND | wx.ALL, 5),
-                 (self.inner_sizer, 0, wx.EXPAND | wx.ALL, 5)]:
-            outer_sizer.Add(item, prop, flag, border)
+        try:
+            for item, prop, flag, border in \
+                    [(self.timer_toggle_btn, 0, wx.EXPAND | wx.ALL, 5),
+                     (inner_sizer, 0, wx.EXPAND | wx.ALL, 5)]:
+                outer_sizer.Add(item, prop, flag, border)
+        except Exception as ex:
+            print ex
 
         for item, prop, flag, border in \
                 [(timer_label, 1, wx.ALIGN_BOTTOM, 0),
@@ -286,14 +288,15 @@ class ScanControlPanel(wx.Panel):
         self.Refresh()
 
 
-class ScanRotationPane(wx.Panel):
+class ScanRotationPanel(wx.Panel):
     def __init__(self, scan_data,*args, **kwargs):
-        super(ScanControlPanel, self).__init__(*args, **kwargs)
+        super(ScanRotationPanel, self).__init__(*args, **kwargs)
+
         self.scan_data = scan_data
         self.SetBackgroundColour('#E6E6E6')
         self.Bind(wx.EVT_PAINT, self.on_paint)
 
-        self._buffer = wx.EmptyBitmap()
+        self._buffer = wx.EmptyBitmap(width=0, height=0)
         self.scan_circle = wx.BufferedPaintDC(window=self, buffer=self._buffer)
 
     def on_paint(self, evt):
@@ -365,47 +368,10 @@ class ScanRotationPane(wx.Panel):
         self.scan_circle.EndDrawing()
 
 
-class MainView(wx.Frame):
-    def __init__(self, *args, **kwargs):
-        super(MainView, self).__init__(*args, **kwargs)
-
-        # Create background panel
-        self.background = wx.Panel(self)
-        self.background.SetBackgroundColour('#4f5049')
-
-        # Create menu bar and its menu items
-        self.menu_bar = wx.MenuBar()
-        self.file_menu = wx.Menu()
-
-        # Create tab control which holds the majority of application content
-        self.tab_view = wx.Notebook(parent=self, id=wx.ID_ANY, style=wx.BK_DEFAULT)
-        # Create live scanning main page
-        self.page1 = ScanTabPanel(parent=self.tab_view, id=wx.ID_ANY)
-        self.tab_view.AddPage(self.page1)
-
-        self.do_layout()
-
-    def create_controls(self):
-        self.background = wx.Panel(self)
-
-    def bind_events(self):
-        pass
-
-    def do_layout(self):
-        # Add the exit button to the applications file menu
-        app_exit = self.file_menu.Append(id=wx.ID_EXIT, text='Exit', help='Exit Application')
-        self.file_menu.Append(app_exit)
-        self.Bind(event=wx.EVT_MENU, handler=self.on_exit, source=app_exit)
-
-        self.menu_bar.Append(self.file_menu, '&File')
-
-    def update(self):
-        pass
-
-
 class ScanTabPanel(wx.Panel):
     def __init__(self, *args, **kwargs):
         super(ScanTabPanel, self).__init__(*args, **kwargs)
+        TITLE_FONT = wx.Font(15, style=wx.NORMAL, family=wx.MODERN, weight=wx.BOLD)
 
         self.scan_dict = {'countdown_time': 5,
                           'total_countdown_time': 5,
@@ -415,7 +381,7 @@ class ScanTabPanel(wx.Panel):
                           'compass_angle': 0.0,
                           'is_scanning': False}
 
-        outer_horiz_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        root_sizer = wx.BoxSizer(wx.HORIZONTAL)
         left_sizer = wx.BoxSizer(wx.VERTICAL)
 
         # Create system info panel
@@ -429,12 +395,59 @@ class ScanTabPanel(wx.Panel):
         left_sizer.Add(self.detect_settings_panel)
 
         self.scan_control_panel = ScanControlPanel(parent=self, scan_data=self.scan_dict)
-        self.Bind(wx.EVT_TIMER)
         left_sizer.Add(self.scan_control_panel)
 
-        outer_horiz_sizer.Add(item=left_sizer, proportion=1, flag=wx.EXPAND | wx.ALL | wx.CENTER)
+        root_sizer.Add(item=left_sizer, proportion=1, flag=wx.EXPAND | wx.ALL | wx.CENTER)
 
-    def set_bindings(self):
-        self.Bind(wx.EVT_BUTTON, button_handler)
+        self.scan_display = ScanRotationPanel(parent=self, scan_data=self.scan_dict, style=wx.SUNKEN_BORDER)
+        middle_sizer = wx.BoxSizer(wx.VERTICAL)
+        middle_sizer.Add(self.scan_display, proportion=1, flag=wx.EXPAND | wx.ALL | wx.CENTER)
 
-    def button_handler(self):
+        root_sizer.Add(item=middle_sizer, proportion=1, flag=wx.ALL | wx.EXPAND)
+
+
+class MainView(wx.Frame):
+    def __init__(self, *args, **kwargs):
+        super(MainView, self).__init__(*args, **kwargs)
+
+        # Create background panel
+        self.background = wx.Panel(self)
+        self.background.SetBackgroundColour('#4f5049')
+
+
+        # Create menu bar and its menu items
+        self.menu_bar = wx.MenuBar()
+
+        self.file_menu = wx.Menu()
+        app_exit = self.file_menu.Append(id=wx.ID_EXIT, text='Exit', help='Exit Application')
+        self.Bind(event=wx.EVT_MENU, handler=self.on_exit, source=app_exit)
+
+        self.menu_bar.Append(self.file_menu, '&File')
+        self.SetMenuBar(self.menu_bar)
+
+        # Create tab control which holds the majority of application content
+        self.tab_view = wx.Notebook(parent=self, id=wx.ID_ANY, style=wx.BK_DEFAULT)
+        self.scan_page = ScanTabPanel(parent=self.tab_view, id=wx.ID_ANY)
+        self.tab_view.AddPage(page=self.scan_page, text='Scan')
+
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        main_sizer.Add(item=self.tab_view, proportion=1, flag=wx.ALL | wx.EXPAND, border=15)
+        self.background.SetSizer(main_sizer)
+
+    def update(self):
+        pass
+
+    def on_exit(self):
+        self.Close()
+
+if __name__ == '__main__':
+    try:
+        app = wx.App()
+        main_view = MainView(parent=None)
+        main_view.SetTitle('UAV Radio Direction Finder')
+        main_view.Maximize()
+        main_view.Show()
+
+        app.MainLoop()
+    except Exception as ex:
+        print ex
