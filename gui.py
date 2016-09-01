@@ -220,30 +220,48 @@ class ScanControlPanel(wx.Panel):
 
         self.submit_btn = wx.Button(parent=self, id=wx.ID_ANY, label='Submit')
         self.submit_btn.Bind(event=wx.EVT_BUTTON, handler=self.on_submit)
-
         # Arranging Controls
-        inner_sizer = wx.GridSizer(rows=5, cols=1, vgap=5, hgap=5)
-        outer_sizer = wx.GridSizer(rows=1, cols=2, vgap=5, hgap=5)
-
-        try:
-            for item, prop, flag, border in \
-                    [(self.timer_toggle_btn, 0, wx.EXPAND | wx.ALL, 5),
-                     (inner_sizer, 0, wx.EXPAND | wx.ALL, 5)]:
-                outer_sizer.Add(item, prop, flag, border)
-        except Exception as ex:
-            print ex
+        inner_grid = wx.GridSizer(rows=3, cols=1, vgap=5, hgap=5)
+        outer_grid = wx.GridSizer(rows=1, cols=2, vgap=5, hgap=5)
 
         for item, prop, flag, border in \
-                [(timer_label, 1, wx.ALIGN_BOTTOM, 0),
-                 (self.timer_txt_ctrl, 1, wx.EXPAND, 0),
-                 (scan_label, 1, wx.EXPAND, 0),
-                 (self.scan_txt_ctrl, 1, wx.EXPAND, 0),
-                 (self.submit_btn, 1, wx.EXPAND, 0)]:
-            inner_sizer.Add(item, prop, flag, border)
+                [(inner_grid, 0, wx.ALL, 5),
+                 (self.timer_toggle_btn, 0, wx.EXPAND | wx.ALL, 5)]:
+            outer_grid.Add(item, prop, flag, border)
+
+        timer_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        timer_sizer.Add(item=timer_label,
+                        proportion=0,
+                        flag=wx.EXPAND | wx.RIGHT,
+                        border=5)
+        timer_sizer.Add(item=self.timer_txt_ctrl,
+                        proportion=1)
+
+        scan_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        scan_sizer.Add(item=scan_label,
+                       proportion=1,
+                       flag=wx.EXPAND)
+        scan_sizer.Add(item=self.scan_txt_ctrl,
+                       proportion=2,
+                       flag=wx.EXPAND)
+
+        for item, prop, flag, border in \
+            [(timer_sizer, 0, wx.EXPAND, 0),
+             (scan_sizer, 0, wx.EXPAND, 0),
+             (self.submit_btn, 0, wx.CENTER, 0)]:
+            inner_grid.Add(item, prop, flag, border)
+
+        # for item, prop, flag, border in \
+        #         [(timer_label, 1, wx.ALIGN_BOTTOM, 0),
+        #          (self.timer_txt_ctrl, 1, wx.SHAPED | wx.ALL, 0),
+        #          (scan_label, 1, wx.ALIGN_BOTTOM, 0),
+        #          (self.scan_txt_ctrl, 1, wx.SHAPED, 0),
+        #          (self.submit_btn, 1, wx.ALIGN_BOTTOM | wx.SHAPED, 0)]:
+        #     inner_grid.Add(item, prop, flag, border)
 
         panel_sizer = wx.BoxSizer(wx.VERTICAL)
         panel_sizer.Add(item=title_label, proportion=0, flag=wx.TOP | wx.LEFT, border=20)
-        panel_sizer.Add(item=outer_sizer, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
+        panel_sizer.Add(item=outer_grid, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
         self.SetSizer(panel_sizer)
 
     def on_timer_toggle(self, evt):
@@ -289,7 +307,7 @@ class ScanControlPanel(wx.Panel):
 
 
 class ScanRotationPanel(wx.Panel):
-    def __init__(self, scan_data,*args, **kwargs):
+    def __init__(self, scan_data, *args, **kwargs):
         super(ScanRotationPanel, self).__init__(*args, **kwargs)
 
         self.scan_data = scan_data
@@ -382,28 +400,30 @@ class ScanTabPanel(wx.Panel):
                           'is_scanning': False}
 
         root_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.SetSizer(root_sizer)
         left_sizer = wx.BoxSizer(wx.VERTICAL)
 
         # Create system info panel
         self.sys_info_panel = SystemInfoPanel(parent=self, style=wx.SUNKEN_BORDER)
         self.sys_info_panel.set_title_font(TITLE_FONT)
-        left_sizer.Add(self.sys_info_panel)
+        left_sizer.Add(self.sys_info_panel, proportion=1, flag=wx.EXPAND | wx.ALL)
 
         # Create detection settings input control
-        self.detect_settings_panel = DetectSettingsPanel(parent=self)
+        self.detect_settings_panel = DetectSettingsPanel(parent=self, style=wx.SUNKEN_BORDER)
         self.detect_settings_panel.set_title_font(TITLE_FONT)
-        left_sizer.Add(self.detect_settings_panel)
+        left_sizer.Add(self.detect_settings_panel, proportion=1, flag=wx.EXPAND)
 
-        self.scan_control_panel = ScanControlPanel(parent=self, scan_data=self.scan_dict)
-        left_sizer.Add(self.scan_control_panel)
+        self.scan_control_panel = ScanControlPanel(parent=self, scan_data=self.scan_dict, style=wx.SUNKEN_BORDER)
+        left_sizer.Add(self.scan_control_panel, proportion=1, flag=wx.EXPAND)
 
         root_sizer.Add(item=left_sizer, proportion=1, flag=wx.EXPAND | wx.ALL | wx.CENTER)
 
         self.scan_display = ScanRotationPanel(parent=self, scan_data=self.scan_dict, style=wx.SUNKEN_BORDER)
-        middle_sizer = wx.BoxSizer(wx.VERTICAL)
+        middle_sizer = wx.BoxSizer(wx.VERTICAL)2
         middle_sizer.Add(self.scan_display, proportion=1, flag=wx.EXPAND | wx.ALL | wx.CENTER)
 
         root_sizer.Add(item=middle_sizer, proportion=1, flag=wx.ALL | wx.EXPAND)
+
 
 
 class MainView(wx.Frame):
@@ -413,7 +433,6 @@ class MainView(wx.Frame):
         # Create background panel
         self.background = wx.Panel(self)
         self.background.SetBackgroundColour('#4f5049')
-
 
         # Create menu bar and its menu items
         self.menu_bar = wx.MenuBar()
@@ -426,7 +445,7 @@ class MainView(wx.Frame):
         self.SetMenuBar(self.menu_bar)
 
         # Create tab control which holds the majority of application content
-        self.tab_view = wx.Notebook(parent=self, id=wx.ID_ANY, style=wx.BK_DEFAULT)
+        self.tab_view = wx.Notebook(parent=self.background, id=wx.ID_ANY, style=wx.BK_DEFAULT)
         self.scan_page = ScanTabPanel(parent=self.tab_view, id=wx.ID_ANY)
         self.tab_view.AddPage(page=self.scan_page, text='Scan')
 
