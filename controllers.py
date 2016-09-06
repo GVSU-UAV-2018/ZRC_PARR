@@ -1,21 +1,42 @@
-import gui
-
-class MainPageController(object):
-    def __init__(self):
-        self.altitude = 0.0
-        self.heading = 0.0
-        self.scan_frequency = 0.0
-        self.gain = 0.0
-        self.snr = 0.0
-
-        self.view = gui.MainView()
-        self.child = ScanTabController(parent=self.view)
+from gstation import MainWindow
+from zrc_core import SerialInterface, MessageString, MessageType
+from rdfinder import UAVRadioFinder
+from threading import Thread, Event
 
 
+class MainWindowController(object):
+    def __init__(self, config):
+        self.mainWinView = MainWindow(parent=None)
 
-class ScanTabController(object):
-    def __init__(self, parent_view, *args, **kwargs):
-        self.view = gui.ScanTabPanel(parent=parent_view, id=wx.ID_ANY)
+        self.statusView = self.mainWinView.statusDisplayPanel
+
+        self.serial = SerialInterface(config)
+
+        self.rdfinder = UAVRadioFinder(self.serial)
+
+        self.timerControl = Event()
+        self.updateTimer = TimerThread(event=self.timerControl, func=self.OnTimerTick, interval=0.5)
+
+    def Show(self):
+        self.mainWinView.Maximize()
+        self.mainWinView.Show()
+
+    def OnTimerTick(self):
+        self.statusView.SetAltitude(self.rdfinder.GetAltitude())
+        self.statusView.SetHeading(self.rdfinder.GetHeading())
 
 
+class TimerThread(Thread):
+    def __init__(self, event, func, interval=0.5):
+        super(TimerThread, self).__init__(self)
+        self.stopped = event
+        self.interval = interval
 
+        if callable(func):
+            self.func = func
+        else:
+            raise TypeError('Function provided must be callable')
+
+    def run(self):
+        while not self.stopped.wait(self.interval):
+            self.func()

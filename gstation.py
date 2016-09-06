@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 
-import zrc_base
+import zrc_core
 
 import wx
 import wx.lib.newevent
 import sys, os
+import json
 import math
 import threading
 import time
 import logging
+import controllers
 
 COLORS = {'normalText': '#08244A',
           'panelPrimary': '#2E4F7C',
@@ -163,56 +165,70 @@ class StatusDisplayPanel(wx.Panel):
         super(StatusDisplayPanel, self).__init__(*args, **kwargs)
         self.SetBackgroundColour(COLORS['panelPrimary'])
 
-        self.altDisp = PropertyDisplayControl(
+        self._altDisp = PropertyDisplayControl(
             parent=self,
             label='Altitude',
             unit=' meters')
-        self.altDisp.SetValue(125.60)
+        self._altDisp.SetValue(125.60)
 
-        self.headingDisp = PropertyDisplayControl(
+        self._headingDisp = PropertyDisplayControl(
             parent=self,
             label='UAV Heading',
             unit=DEGREE_SIGN)
-        self.headingDisp.SetValue(128)
+        self._headingDisp.SetValue(128)
 
-        self.scanDirDisp = PropertyDisplayControl(
+        self._scanDirDisp = PropertyDisplayControl(
             parent=self,
             label='Target Heading',
             unit=DEGREE_SIGN)
-        self.scanDirDisp.SetValue(320)
+        self._scanDirDisp.SetValue(320)
 
-        self.scanTimeDisp = PropertyDisplayControl(
+        self._scanTimeDisp = PropertyDisplayControl(
             parent=self,
             label='Scanning Time')
-        self.scanTimeDisp.SetValue('00:00')
+        self._scanTimeDisp.SetValue('00:00')
 
         statusSizer = wx.BoxSizer(orient=wx.VERTICAL)
         self.SetSizer(statusSizer)
         statusSizer.Add(
-            item=self.altDisp,
+            item=self._altDisp,
             proportion=0,
             flag=wx.ALL | wx.EXPAND,
             border=2)
         statusSizer.Add(
-            item=self.headingDisp,
+            item=self._headingDisp,
             proportion=0,
             flag=wx.ALL | wx.EXPAND,
             border=2)
         statusSizer.Add(
-            item=self.scanDirDisp,
+            item=self._scanDirDisp,
             proportion=0,
             flag=wx.ALL | wx.EXPAND,
             border=2)
         statusSizer.Add(
-            item=self.scanTimeDisp,
+            item=self._scanTimeDisp,
             proportion=0,
             flag=wx.ALL | wx.EXPAND,
             border=2)
+
+    def SetAltitude(self, altitude):
+        self._altDisp.SetValue(altitude)
+
+    def SetHeading(self, heading):
+        self._headingDisp.SetValue(heading)
+
+    def SetScanDirection(self, direction):
+        self._scanDirDisp.SetValue(direction)
+
+    def SetScanTime(self, time):
+        self._scanTimeDisp.SetValue(time)
+
 
 class ScanSettingsPanel(wx.Panel):
     def __init__(self, *args, **kwargs):
         super(ScanSettingsPanel, self).__init__(*args, **kwargs)
         self.SetBackgroundColour(COLORS['panelPrimary'])
+
 
 class PropertyDisplayControl(wx.Panel):
     def __init__(self, label, unit=None, *args, **kwargs):
@@ -264,11 +280,24 @@ class PropertyDisplayControl(wx.Panel):
 
 if __name__ == '__main__':
     try:
+        try:
+            with open('config.json') as data_file:
+                data = json.load(data_file)
+
+        except IOError:
+            data = {'port': '/dev/ttyUSB0',
+                     'baud': 57600,
+                     'timeout': 0.1}
+
+
         app = wx.App()
-        mainWin = MainWindow(parent=None)
-        mainWin.Maximize()
-        mainWin.Show()
+        mainControl = controllers.MainWindowController(data)
+
+        mainControl.Show()
         app.MainLoop()
+
+        with open('config.json', 'w') as outfile:
+            json.dump(data, outfile)
 
     except Exception as ex:
         print ex

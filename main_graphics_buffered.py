@@ -7,7 +7,7 @@ from wx.lib import sheet
 
 import Serial_CRC
 import gui
-from zrc_base import SerialInterface, MessageString, MessageType
+from zrc_core import SerialInterface, MessageString, MessageType
 
 USE_BUFFERED_DC = True
 

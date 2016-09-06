@@ -1,22 +1,23 @@
+from zrc_core import SerialInterface, MessageString, MessageType
 import Queue
+import random
 import time
-
-from zrc_base import SerialPort
 
 
 def main():
     port=None
     try:
-        in_q = Queue.Queue()
-        out_q = Queue.Queue()
 
-        port = SerialPort(in_q=in_q, out_q=out_q)
+        config = {'port': '/dev/ttyUSB0',
+                  'baud': 57600,
+                  'timeout': 0.1}
+        port = SerialInterface(config)
         port.start()
         var = 'n'
         while var is not 'y':
-            port.send_attitude(alt=0.2, heading=180.0)
+            port.send_attitude(alt=random.uniform(20.0, 100.0), heading=random.uniform(0.0, 360.0))
             print 'sent attitude'
-            time.sleep(60)
+            time.sleep(1)
     except Exception as e:
         print e.message
 
