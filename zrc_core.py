@@ -201,8 +201,10 @@ class SerialPort(object):
         self._put_message(packet)
 
     def close(self):
-        self.receive_thread.join(timeout=0.2)
-        self.send_thread.join(timeout=0.2)
+        if self.receive_thread.is_alive():
+            self.receive_thread.join(timeout=0.2)
+        if self.send_thread.is_alive():
+            self.send_thread.join(timeout=0.2)
         self.serial.close()
 
 
@@ -236,7 +238,8 @@ class SerialInterface(SerialPort):
 
     def close(self):
         self._poll.clear()
-        self.inbound_polling.join(timeout=0.2)
+        if self.inbound_polling.is_alive():
+            self.inbound_polling.join(timeout=0.2)
         super(SerialInterface, self).close()
 
     def _receive(self):
@@ -246,7 +249,7 @@ class SerialInterface(SerialPort):
                 if msg is None:
                     time.sleep(0.05)
                 else:
-                    pub.sendMessage(MessageString[msg.msg_id], arg1=msg)
+                    pub.sendMessage(MessageString[msg.msg_id], msg=msg)
                     self.in_q.task_done()
 
             except Queue.Empty:

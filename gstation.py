@@ -3,6 +3,8 @@
 import zrc_core
 
 import wx
+from wx.lib.masked import NumCtrl
+from pubsub import  pub
 import wx.lib.newevent
 import sys, os
 import json
@@ -12,16 +14,19 @@ import time
 import logging
 import controllers
 
-COLORS = {'normalText': '#08244A',
-          'panelPrimary': '#2E4F7C',
+COLORS = {'normalText': '#000000',
+          'lightText': '#728CB0',
+          'panelPrimary': '#2196F3',
           'panelSecondary': '#496892',
-          'panelTertiary': '#728CB0',
+          'panelTertiary': '#64B5F6',
           'windowBg': '#1A2C45'}
 
 LOCAL_ENCODING = 'utf-8'
 DEGREE_SIGN = u'\xb0'.encode(LOCAL_ENCODING)
 
 DIRECTORY = os.path.dirname(__file__)
+
+global normalFont
 
 
 class MainWindow(wx.Frame):
@@ -35,14 +40,14 @@ class MainWindow(wx.Frame):
         self.SetMenuBar(self.menuBar)
         self.fileMenu = wx.Menu()
 
-        exit_menu_item = wx.MenuItem(parentMenu=self.fileMenu,
-                                     id=wx.ID_EXIT,
-                                     text='Shutdown')
+        self.exitMenuItem = wx.MenuItem(parentMenu=self.fileMenu,
+                                        id=wx.ID_EXIT,
+                                        text='Shutdown')
 
-        self.fileMenu.AppendItem(exit_menu_item)
-        self.Bind(event=wx.EVT_MENU,
-                  handler=self.OnClose,
-                  source=exit_menu_item)
+        self.fileMenu.AppendItem(self.exitMenuItem)
+        # self.Bind(event=wx.EVT_MENU,
+        #           handler=self.OnClose,
+        #           source=exit_menu_item)
 
         self.menuBar.Append(menu=self.fileMenu,
                             title='&File')
@@ -98,6 +103,7 @@ class MainWindow(wx.Frame):
             proportion=3,
             flag=wx.LEFT | wx.EXPAND,
             border=3)
+
         self.mainSizer.Add(
             item=self.bottomSizer,
             proportion=5,
@@ -212,13 +218,16 @@ class StatusDisplayPanel(wx.Panel):
             border=2)
 
     def SetAltitude(self, altitude):
-        self._altDisp.SetValue(altitude)
+        alt = '{0:.2f}'.format(altitude)
+        self._altDisp.SetValue(alt)
 
     def SetHeading(self, heading):
-        self._headingDisp.SetValue(heading)
+        hd = '{0:.2f}'.format(heading)
+        self._headingDisp.SetValue(hd)
 
     def SetScanDirection(self, direction):
-        self._scanDirDisp.SetValue(direction)
+        dir = '{0:.2f}'.format(direction)
+        self._scanDirDisp.SetValue(dir)
 
     def SetScanTime(self, time):
         self._scanTimeDisp.SetValue(time)
@@ -228,6 +237,66 @@ class ScanSettingsPanel(wx.Panel):
     def __init__(self, *args, **kwargs):
         super(ScanSettingsPanel, self).__init__(*args, **kwargs)
         self.SetBackgroundColour(COLORS['panelPrimary'])
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        self.SetSizer(sizer)
+
+        self.freqCtrl = NumDispControl(parent=self, label='Scan Frequency')
+        self.freqCtrl.numCtrl.SetFractionWidth(3)
+        self.gainCtrl = NumDispControl(parent=self, label='Receiver Gain')
+        self.gainCtrl.numCtrl.SetFractionWidth(1)
+        self.snrCtrl = NumDispControl(parent=self, label='SNR Threshold')
+        self.snrCtrl.numCtrl.SetFractionWidth(1)
+
+        self.submitBtn = wx.Button(parent=self, id=wx.ID_ANY, label='Submit')
+        self.submitBtn.SetFont(wx.Font(pointSize=20, family=wx.MODERN, style=wx.NORMAL, weight=wx.NORMAL))
+        self.submitBtn.SetForegroundColour(COLORS['normalText'])
+        self.submitBtn.SetBackgroundColour(COLORS['panelTertiary'])
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.AddSpacer(item=(0, 0), proportion=1, flag=wx.EXPAND)
+        btnSizer.Add(self.submitBtn, proportion=1, flag=wx.EXPAND)
+
+        self.submitBtn.Bind(wx.EVT_BUTTON, self.OnSubmit)
+
+        sizer.Add(item=self.freqCtrl, proportion=0, flag=wx.ALL | wx.EXPAND, border=5)
+        sizer.Add(item=self.gainCtrl, proportion=0, flag=wx.ALL | wx.EXPAND, border=5)
+        sizer.Add(item=self.snrCtrl, proportion=0, flag=wx.ALL | wx.EXPAND, border=5)
+        sizer.AddSpacer(item=(0, 0), proportion=1, flag=wx.EXPAND)
+        sizer.Add(item=btnSizer, proportion=1, flag=wx.ALL | wx.EXPAND, border=5)
+
+    def OnSubmit(self, evt):
+        freq = self.freqCtrl.GetValue() * 1000000
+        gain = self.gainCtrl.GetValue()
+        snr = self.snrCtrl.GetValue()
+        msgArg = {'freq': freq,
+                  'gain': gain,
+                  'snr': snr}
+        pub.sendMessage('scanSettings.Submit', params=msgArg)
+
+
+class NumDispControl(wx.GridSizer):
+    def __init__(self, parent, label):
+        super(NumDispControl, self).__init__(rows=1, cols=2, vgap=0, hgap=0)
+
+        font = wx.Font(
+            pointSize=32,
+            family=wx.DECORATIVE,
+            style=wx.NORMAL,
+            weight=wx.BOLD)
+
+        self.labelText = wx.StaticText(parent=parent, label=label)
+        self.labelText.SetFont(font)
+        self.labelText.SetForegroundColour('#000000')
+
+        self.numCtrl = NumCtrl(parent=parent, id=wx.ID_ANY, style=wx.TE_RIGHT)
+        self.numCtrl.SetFont(font)
+        self.numCtrl.SetForegroundColour(COLORS['normalText'])
+
+        self.Add(item=self.labelText, proportion=0, flag=wx.ALL | wx.EXPAND, border=3)
+        self.Add(item=self.numCtrl, proportion=0, flag=wx.ALL | wx.EXPAND, border=3)
+
+    def GetValue(self):
+        return self.numCtrl.GetValue()
 
 
 class PropertyDisplayControl(wx.Panel):
@@ -291,6 +360,13 @@ if __name__ == '__main__':
 
 
         app = wx.App()
+        global normalFont
+        normalFont = wx.Font(
+            pointSize=32,
+            family=wx.DECORATIVE,
+            style=wx.NORMAL,
+            weight=wx.BOLD)
+
         mainControl = controllers.MainWindowController(data)
 
         mainControl.Show()

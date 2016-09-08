@@ -13,9 +13,9 @@ class UAVRadioFinder(object):
         self._altitude = 0.0
         self._serial = serial
 
-        self.scan_alive = threading.Event()
-        self.scan_alive.set()
-        self.scan_thread = threading.Thread(target=self._send_scanning)
+        self._scan_alive = threading.Event()
+        self._scan_alive.set()
+        self._scan_thread = threading.Thread(target=self._send_scanning)
         self.scanning = False
 
         self._serial.subscribe(MessageString[MessageType.attitude], self.OnAttitudeReceived)
@@ -24,7 +24,7 @@ class UAVRadioFinder(object):
         self._heading = msg.heading
         self._altitude = msg.altitude
 
-    def UpdateReceiver(self):
+    def UpdateScanSettings(self):
         self._serial.send_scan_settings(self.gain,
                                         self.scanFrequency,
                                         self.snrThreshold)
@@ -41,13 +41,14 @@ class UAVRadioFinder(object):
     def GetHeading(self):
         return self._altitude
 
-    def SendScanning(self):
-        self._serial.SendScanning(self.scanning)
+    def _send_scanning(self):
+        while self._scan_alive:
+            self._serial.SendScanning(self.scanning)
 
     def Start(self):
-        self.scan_thread.start()
+        self._scan_thread.start()
 
     def Close(self):
-        self.scan_alive.clear()
-        self.scan_thread.join(timeout=0.5)
-        self.serial_com.Close()
+        if self._scan_thread.is_alive():
+            self._scan_alive.clear()
+            self._scan_thread.join(timeout=0.5)
