@@ -13,6 +13,7 @@ import threading
 import time
 import logging
 import controllers
+import string
 
 COLORS = {'normalText': '#000000',
           'lightText': '#728CB0',
@@ -26,7 +27,9 @@ DEGREE_SIGN = u'\xb0'.encode(LOCAL_ENCODING)
 
 DIRECTORY = os.path.dirname(__file__)
 
-global normalFont
+ALPHA_ONLY = 1
+INT_ONLY = 2
+FLOAT_ONLY = 3
 
 
 class MainWindow(wx.Frame):
@@ -45,9 +48,6 @@ class MainWindow(wx.Frame):
                                         text='Shutdown')
 
         self.fileMenu.AppendItem(self.exitMenuItem)
-        # self.Bind(event=wx.EVT_MENU,
-        #           handler=self.OnClose,
-        #           source=exit_menu_item)
 
         self.menuBar.Append(menu=self.fileMenu,
                             title='&File')
@@ -82,11 +82,9 @@ class MainWindow(wx.Frame):
 
         self.scanSettingsPanel = ScanSettingsPanel(parent=self.childPanel)
 
-        self.scanStartPanel = wx.Panel(parent=self.childPanel)
-        self.scanStartPanel.SetBackgroundColour(COLORS['panelSecondary'])
+        self.scanResultsPanel = ScanResultsPanel(parent=self.childPanel)
 
-        self.scanResultsPanel = wx.Panel(parent=self.childPanel)
-        self.scanResultsPanel.SetBackgroundColour(COLORS['panelPrimary'])
+        self.scanStartPanel = ScanStartPanel(parent=self.childPanel)
 
         self.bottomSizer = wx.BoxSizer(wx.HORIZONTAL)
         self.bottomSizer.Add(
@@ -95,11 +93,11 @@ class MainWindow(wx.Frame):
             flag=wx.RIGHT | wx.EXPAND,
             border=3)
         self.bottomSizer.Add(
-            item=self.scanStartPanel,
+            item=self.scanResultsPanel,
             proportion=5,
             flag=wx.EXPAND)
         self.bottomSizer.Add(
-            item=self.scanResultsPanel,
+            item=self.scanStartPanel,
             proportion=3,
             flag=wx.LEFT | wx.EXPAND,
             border=3)
@@ -119,19 +117,19 @@ class SettingsDisplayPanel(wx.Panel):
         super(SettingsDisplayPanel, self).__init__(*args, **kwargs)
         self.SetBackgroundColour(COLORS['panelPrimary'])
 
-        self.scanFreqDisp = PropertyDisplayControl(
+        self.scanFreqDisp = DisplayControl(
             parent=self,
             label='Scan Frequency',
             unit=' MHz')
         self.scanFreqDisp.SetValue(150.245)
 
-        self.gainDisp = PropertyDisplayControl(
+        self.gainDisp = DisplayControl(
             parent=self,
             label='Receiver Gain',
             unit=' dB')
         self.gainDisp.SetValue(5.00)
 
-        self.snrDisp = PropertyDisplayControl(
+        self.snrDisp = DisplayControl(
             parent=self,
             label='SNR Threshold')
         self.snrDisp.SetValue(10)
@@ -171,25 +169,25 @@ class StatusDisplayPanel(wx.Panel):
         super(StatusDisplayPanel, self).__init__(*args, **kwargs)
         self.SetBackgroundColour(COLORS['panelPrimary'])
 
-        self._altDisp = PropertyDisplayControl(
+        self._altDisp = DisplayControl(
             parent=self,
             label='Altitude',
             unit=' meters')
         self._altDisp.SetValue(125.60)
 
-        self._headingDisp = PropertyDisplayControl(
+        self._headingDisp = DisplayControl(
             parent=self,
             label='UAV Heading',
             unit=DEGREE_SIGN)
         self._headingDisp.SetValue(128)
 
-        self._scanDirDisp = PropertyDisplayControl(
+        self._scanDirDisp = DisplayControl(
             parent=self,
             label='Target Heading',
             unit=DEGREE_SIGN)
         self._scanDirDisp.SetValue(320)
 
-        self._scanTimeDisp = PropertyDisplayControl(
+        self._scanTimeDisp = DisplayControl(
             parent=self,
             label='Scanning Time')
         self._scanTimeDisp.SetValue('00:00')
@@ -241,45 +239,188 @@ class ScanSettingsPanel(wx.Panel):
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(sizer)
 
-        self.freqCtrl = NumDispControl(parent=self, label='Scan Frequency')
-        self.freqCtrl.numCtrl.SetFractionWidth(3)
-        self.gainCtrl = NumDispControl(parent=self, label='Receiver Gain')
-        self.gainCtrl.numCtrl.SetFractionWidth(1)
-        self.snrCtrl = NumDispControl(parent=self, label='SNR Threshold')
-        self.snrCtrl.numCtrl.SetFractionWidth(1)
+        self.freqCtrl = FloatTextControl(parent=self, label='Scan Frequency (MHz)')
+        #self.freqCtrl.numCtrl.SetFractionWidth(3)
+        self.freqCtrl.numCtrl.SetMaxSize((100,100))
+        self.gainCtrl = FloatTextControl(parent=self, label='Receiver Gain (dB)')
+        #self.gainCtrl.numCtrl.SetFractionWidth(1)
+       # self.gainCtrl.numCtrl.SetAllowNegative(True)
+        self.snrCtrl = FloatTextControl(parent=self, label='SNR Threshold')
+       # self.snrCtrl.numCtrl.SetFractionWidth(1)
 
         self.submitBtn = wx.Button(parent=self, id=wx.ID_ANY, label='Submit')
         self.submitBtn.SetFont(wx.Font(pointSize=20, family=wx.MODERN, style=wx.NORMAL, weight=wx.NORMAL))
         self.submitBtn.SetForegroundColour(COLORS['normalText'])
         self.submitBtn.SetBackgroundColour(COLORS['panelTertiary'])
+        self.submitBtn.Bind(event=wx.EVT_BUTTON, handler=self.OnSubmit)
+
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         btnSizer.AddSpacer(item=(0, 0), proportion=1, flag=wx.EXPAND)
         btnSizer.Add(self.submitBtn, proportion=1, flag=wx.EXPAND)
 
-        self.submitBtn.Bind(wx.EVT_BUTTON, self.OnSubmit)
-
         sizer.Add(item=self.freqCtrl, proportion=0, flag=wx.ALL | wx.EXPAND, border=5)
         sizer.Add(item=self.gainCtrl, proportion=0, flag=wx.ALL | wx.EXPAND, border=5)
         sizer.Add(item=self.snrCtrl, proportion=0, flag=wx.ALL | wx.EXPAND, border=5)
-        sizer.AddSpacer(item=(0, 0), proportion=1, flag=wx.EXPAND)
+        sizer.AddSpacer(item=(0, 0), proportion=2, flag=wx.EXPAND)
         sizer.Add(item=btnSizer, proportion=1, flag=wx.ALL | wx.EXPAND, border=5)
 
-    def OnSubmit(self, evt):
+    def ValidInput(self):
+        for ctrl in [self.freqCtrl, self.gainCtrl, self.snrCtrl]:
+            if ctrl.numCtrl.GetValidator().Validate(ctrl.numCtrl) is False:
+                return False
+
+        return True
+
+    def OnSubmit(self, event):
+        if self.ValidInput() is False:
+            return
+
         freq = self.freqCtrl.GetValue() * 1000000
         gain = self.gainCtrl.GetValue()
         snr = self.snrCtrl.GetValue()
-        msgArg = {'freq': freq,
+        params = {'freq': freq,
                   'gain': gain,
                   'snr': snr}
-        pub.sendMessage('scanSettings.Submit', params=msgArg)
+        pub.sendMessage('scanSettings.Submit', params=params)
 
 
-class NumDispControl(wx.GridSizer):
+class ScanResultsPanel(wx.Panel):
+    def __init__(self, *args, **kwargs):
+        super(ScanResultsPanel, self).__init__(*args, **kwargs)
+        self.SetBackgroundColour(COLORS['panelPrimary'])
+
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.SetSizer(sizer)
+
+        self.directionDisplay = DisplayControl(parent=self, label='Direction', unit=DEGREE_SIGN)
+        self.directionDisplay.SetValue(140.0)
+        self.powerDisplay = DisplayControl(parent=self, label='Power', unit='dB')
+        self.powerDisplay.SetValue(13.0)
+        self.freqDisplay = DisplayControl(parent=self, label='Frequency', unit='MHz')
+        self.freqDisplay.SetValue(153.405)
+
+        leftSizer = wx.BoxSizer(wx.VERTICAL)
+        leftSizer.Add(item=self.directionDisplay, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
+        leftSizer.Add(item=self.powerDisplay, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
+        leftSizer.Add(item=self.freqDisplay, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
+
+        sizer.Add(item=leftSizer, proportion=1, flag=wx.ALL | wx.EXPAND, border=5)
+        sizer.AddSpacer(item=(0, 0), proportion=1, flag=wx.ALL | wx.EXPAND, border=5)
+
+
+class ScanStartPanel(wx.Panel):
+    def __init__(self, *args, **kwargs):
+        super(ScanStartPanel, self).__init__(*args, **kwargs)
+        self.SetBackgroundColour(COLORS['panelPrimary'])
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        self.SetSizer(sizer)
+
+        self.countdownCtrl = FloatTextControl(parent=self, label='Countdown Time (s)')
+        self.scanTimeCtrl = FloatTextControl(parent=self, label='Scanning Time (s)')
+
+        self.startBtn = wx.Button(parent=self, id=wx.ID_ANY, label='Start')
+        self.startBtn.SetFont(wx.Font(pointSize=20, family=wx.MODERN, style=wx.NORMAL, weight=wx.NORMAL))
+        self.startBtn.SetForegroundColour(COLORS['normalText'])
+        self.startBtn.SetBackgroundColour(COLORS['panelTertiary'])
+        self.startBtn.Bind(event=wx.EVT_BUTTON, handler=self.OnStart)
+
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.AddSpacer(item=(0, 0), proportion=1, flag=wx.EXPAND)
+        btnSizer.Add(item=self.startBtn, proportion=0, flag=wx.EXPAND)
+
+        sizer.Add(item=self.countdownCtrl, proportion=0, flag=wx.ALL | wx.EXPAND, border=5)
+        sizer.Add(item=self.scanTimeCtrl, proportion=0, flag=wx.ALL | wx.EXPAND, border=5)
+        sizer.AddSpacer(item=(0, 0), proportion=1, flag=wx.EXPAND)
+        sizer.Add(item=btnSizer, proportion=1, flag=wx.ALL | wx.EXPAND, border=5)
+
+    def OnStart(self, evt):
+        countdown = self.countdownCtrl.GetValue()
+        scanTime = self.scanTimeCtrl.GetValue()
+        params = {'countdown': countdown,
+                  'scanTime': scanTime}
+        pub.sendMessage('scanStart.Start', params=params)
+
+
+class TextValidator(wx.PyValidator):
+    def __init__(self, flag=None, *args, **kwargs):
+        super(TextValidator, self).__init__(*args, **kwargs)
+        self.flag = flag
+        self.Bind(wx.EVT_CHAR, self.OnChar)
+
+    def Clone(self):
+        return TextValidator(self.flag)
+
+    def Validate(self, win):
+        textCtrl = self.GetWindow()
+        text = textCtrl.GetValue()
+
+        def invalid():
+            textCtrl.SetBackgroundColour('pink')
+            textCtrl.SetFocus()
+            textCtrl.Refresh()
+            return False
+
+        def valid():
+            textCtrl.SetBackgroundColour(
+                wx.SystemSettings_GetColour(wx.SYS_COLOUR_WINDOW)
+            )
+            textCtrl.Refresh()
+            return True
+
+        if len(text) == 0:
+            return invalid()
+
+        elif self.flag == FLOAT_ONLY:
+            try:
+                value = float(text)
+            except ValueError:
+                return invalid()
+
+        elif self.flag == INT_ONLY:
+            try:
+                value = int(text)
+            except ValueError:
+                return invalid()
+
+        elif self.flag == ALPHA_ONLY:
+            for x in text:
+                if x not in string.letters:
+                    return invalid()
+
+        return valid()
+
+    def OnChar(self, event):
+        key = event.GetKeyCode()
+
+        if key < wx.WXK_SPACE or key == wx.WXK_DELETE or key > 255:
+            event.Skip()
+            return
+
+        if self.flag == ALPHA_ONLY and chr(key) in string.letters:
+            event.Skip()
+            return
+
+        if self.flag == INT_ONLY or self.flag == FLOAT_ONLY and chr(key) in string.digits:
+            event.Skip()
+            return
+
+        if self.flag == FLOAT_ONLY \
+                and (key == 46):
+            event.Skip()
+            return
+
+        if not wx.Validator_IsSilient():
+            wx.Bell()
+
+        return
+
+class FloatTextControl(wx.BoxSizer):
     def __init__(self, parent, label):
-        super(NumDispControl, self).__init__(rows=1, cols=2, vgap=0, hgap=0)
+        super(FloatTextControl, self).__init__(wx.HORIZONTAL)
 
         font = wx.Font(
-            pointSize=32,
+            pointSize=22,
             family=wx.DECORATIVE,
             style=wx.NORMAL,
             weight=wx.BOLD)
@@ -288,20 +429,28 @@ class NumDispControl(wx.GridSizer):
         self.labelText.SetFont(font)
         self.labelText.SetForegroundColour('#000000')
 
-        self.numCtrl = NumCtrl(parent=parent, id=wx.ID_ANY, style=wx.TE_RIGHT)
+        self.numCtrl = wx.TextCtrl(parent=parent, id=wx.ID_ANY, style=wx.TE_RIGHT, validator=TextValidator(FLOAT_ONLY))
         self.numCtrl.SetFont(font)
         self.numCtrl.SetForegroundColour(COLORS['normalText'])
+        self.numCtrl.SetMinSize((150, -1))
 
-        self.Add(item=self.labelText, proportion=0, flag=wx.ALL | wx.EXPAND, border=3)
-        self.Add(item=self.numCtrl, proportion=0, flag=wx.ALL | wx.EXPAND, border=3)
+        self.Add(item=self.labelText, proportion=1, flag=wx.ALL | wx.EXPAND, border=3)
+        self.AddSpacer(item=(0, 0), proportion=0, flag=wx.EXPAND)
+        self.Add(item=self.numCtrl, proportion=0, flag=wx.ALL | wx.ALIGN_RIGHT, border=3)
 
     def GetValue(self):
-        return self.numCtrl.GetValue()
+        try:
+            val = float(self.numCtrl.GetValue())
+        except ValueError:
+            return None
+
+        return val
 
 
-class PropertyDisplayControl(wx.Panel):
+
+class DisplayControl(wx.Panel):
     def __init__(self, label, unit=None, *args, **kwargs):
-        super(PropertyDisplayControl, self).__init__(*args, **kwargs)
+        super(DisplayControl, self).__init__(*args, **kwargs)
         font = wx.Font(
             pointSize=32,
             family=wx.DECORATIVE,
@@ -360,16 +509,10 @@ if __name__ == '__main__':
 
 
         app = wx.App()
-        global normalFont
-        normalFont = wx.Font(
-            pointSize=32,
-            family=wx.DECORATIVE,
-            style=wx.NORMAL,
-            weight=wx.BOLD)
 
         mainControl = controllers.MainWindowController(data)
-
         mainControl.Show()
+
         app.MainLoop()
 
         with open('config.json', 'w') as outfile:
