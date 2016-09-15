@@ -200,7 +200,7 @@ class SerialPort(object):
         packet = self.pwrap.wrap(fin_msg)
         self._put_message(packet)
 
-    def close(self):
+    def Dispose(self):
         if self.receive_thread.is_alive():
             self.receive_thread.join(timeout=0.2)
         if self.send_thread.is_alive():
@@ -236,11 +236,11 @@ class SerialInterface(SerialPort):
         super(SerialInterface, self).start()
         self.inbound_polling.start()
 
-    def close(self):
+    def Dispose(self):
         self._poll.clear()
         if self.inbound_polling.is_alive():
             self.inbound_polling.join(timeout=0.2)
-        super(SerialInterface, self).close()
+        super(SerialInterface, self).Dispose()
 
     def _receive(self):
         while self._poll.is_set():

@@ -158,7 +158,7 @@ class UAVRadioFinder(gr.top_block):
             self.snr_threshold = msg.snr_threshold
 
     def close(self):
-        self.serial_port.Close()
+        self.serial_port.Dispose()
 
 
 class Compass(object):

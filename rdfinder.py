@@ -48,7 +48,7 @@ class UAVRadioFinder(object):
     def Start(self):
         self._scan_thread.start()
 
-    def Close(self):
+    def Dispose(self):
         if self._scan_thread.is_alive():
             self._scan_alive.clear()
             self._scan_thread.join(timeout=0.5)

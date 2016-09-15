@@ -3,6 +3,7 @@ from zrc_core import SerialInterface, MessageString, MessageType
 from rdfinder import UAVRadioFinder
 from threading import Thread, Event
 from pubsub import pub
+from serial import SerialException
 import wx
 
 
@@ -19,9 +20,13 @@ class MainWindowController(object):
 
         pub.subscribe(self.UpdateScanSettings, 'scanSettings.Submit')
 
-        self.serial = SerialInterface(config)
-
-        self.rdfinder = UAVRadioFinder(self.serial)
+        self.serial = None
+        self.uavSeeker = None
+        try:
+            self.serial = SerialInterface(config)
+            self.uavSeeker = UAVRadioFinder(self.serial)
+        except SerialException as ex:
+            msgDlg = wx.MessageBox(parent=self.mainWinView, message='Failed to connect to serial port.')
 
         self.stopTimerFlag = Event()
         self.updateTimer = TimerThread(event=self.stopTimerFlag, func=self.OnTimerTick, interval=0.1)
@@ -29,23 +34,27 @@ class MainWindowController(object):
     def Show(self):
         self.mainWinView.Maximize()
         self.mainWinView.Show()
-        self.serial.start()
-        self.updateTimer.start()
+        if self.serial:
+            self.updateTimer.start()
 
     def OnTimerTick(self):
-        wx.CallAfter(self.statusView.SetAltitude, self.rdfinder.GetAltitude())
-        wx.CallAfter(self.statusView.SetHeading, self.rdfinder.GetHeading())
+        if self.uavSeeker is None:
+            return
+        wx.CallAfter(self.statusView.SetAltitude, self.uavSeeker.GetAltitude())
+        wx.CallAfter(self.statusView.SetHeading, self.uavSeeker.GetHeading())
 
     def UpdateScanSettings(self, params):
-        self.rdfinder.scanFrequency = params['freq']
-        self.rdfinder.gain = params['gain']
-        self.rdfinder.snrThreshold = params['snr']
-        self.rdfinder.UpdateScanSettings()
+        self.uavSeeker.scanFrequency = params['freq']
+        self.uavSeeker.gain = params['gain']
+        self.uavSeeker.snrThreshold = params['snr']
+        self.uavSeeker.UpdateScanSettings()
 
     def OnClose(self, evt):
-        self.serial.close()
+        if self.serial:
+            self.serial.Dispose()
         self.stopTimerFlag.set()
-        self.rdfinder.Close()
+        if self.uavSeeker:
+            self.uavSeeker.Dispose()
         self.updateTimer.join(timeout=0.1)
         self.mainWinView.Destroy()
 

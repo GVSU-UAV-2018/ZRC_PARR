@@ -8,7 +8,7 @@ from pubsub import  pub
 import wx.lib.newevent
 import sys, os
 import json
-import math
+from math import pi, cos, sin, radians, degrees
 import threading
 import time
 import logging
@@ -163,6 +163,12 @@ class ScanCirclePanel(wx.Panel):
         super(ScanCirclePanel, self).__init__(*args, **kwargs)
         self.SetBackgroundColour(COLORS['panelSecondary'])
 
+        self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.SetSizer(self.sizer)
+
+        self.circle = CompassControl(parent=self)
+        self.sizer.Add(item=self.circle, proportion=1, flag=wx.EXPAND | wx.ALL, border=4)
+
 
 class StatusDisplayPanel(wx.Panel):
     def __init__(self, *args, **kwargs):
@@ -239,20 +245,18 @@ class ScanSettingsPanel(wx.Panel):
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(sizer)
 
-        self.freqCtrl = FloatTextControl(parent=self, label='Scan Frequency (MHz)')
-        #self.freqCtrl.numCtrl.SetFractionWidth(3)
+        self.freqCtrl = NumTextCtrl(parent=self, label='Scan Frequency (MHz)')
         self.freqCtrl.numCtrl.SetMaxSize((100,100))
-        self.gainCtrl = FloatTextControl(parent=self, label='Receiver Gain (dB)')
-        #self.gainCtrl.numCtrl.SetFractionWidth(1)
-       # self.gainCtrl.numCtrl.SetAllowNegative(True)
-        self.snrCtrl = FloatTextControl(parent=self, label='SNR Threshold')
-       # self.snrCtrl.numCtrl.SetFractionWidth(1)
+        self.gainCtrl = NumTextCtrl(parent=self, label='Receiver Gain (dB)')
+        self.snrCtrl = NumTextCtrl(parent=self, label='SNR Threshold')
 
         self.submitBtn = wx.Button(parent=self, id=wx.ID_ANY, label='Submit')
         self.submitBtn.SetFont(wx.Font(pointSize=20, family=wx.MODERN, style=wx.NORMAL, weight=wx.NORMAL))
         self.submitBtn.SetForegroundColour(COLORS['normalText'])
         self.submitBtn.SetBackgroundColour(COLORS['panelTertiary'])
         self.submitBtn.Bind(event=wx.EVT_BUTTON, handler=self.OnSubmit)
+        self.submitBtn.SetMinSize((-1, 60))
+        self.submitBtn.SetMaxSize((-1, 60))
 
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         btnSizer.AddSpacer(item=(0, 0), proportion=1, flag=wx.EXPAND)
@@ -262,7 +266,7 @@ class ScanSettingsPanel(wx.Panel):
         sizer.Add(item=self.gainCtrl, proportion=0, flag=wx.ALL | wx.EXPAND, border=5)
         sizer.Add(item=self.snrCtrl, proportion=0, flag=wx.ALL | wx.EXPAND, border=5)
         sizer.AddSpacer(item=(0, 0), proportion=2, flag=wx.EXPAND)
-        sizer.Add(item=btnSizer, proportion=1, flag=wx.ALL | wx.EXPAND, border=5)
+        sizer.Add(item=btnSizer, proportion=0, flag=wx.ALL | wx.EXPAND, border=5)
 
     def ValidInput(self):
         for ctrl in [self.freqCtrl, self.gainCtrl, self.snrCtrl]:
@@ -272,7 +276,7 @@ class ScanSettingsPanel(wx.Panel):
         return True
 
     def OnSubmit(self, event):
-        if self.ValidInput() is False:
+        if not self.ValidInput():
             return
 
         freq = self.freqCtrl.GetValue() * 1000000
@@ -316,25 +320,37 @@ class ScanStartPanel(wx.Panel):
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(sizer)
 
-        self.countdownCtrl = FloatTextControl(parent=self, label='Countdown Time (s)')
-        self.scanTimeCtrl = FloatTextControl(parent=self, label='Scanning Time (s)')
+        self.countdownCtrl = NumTextCtrl(parent=self, label='Countdown Time (s)', flag=INT_ONLY)
+        self.scanTimeCtrl = NumTextCtrl(parent=self, label='Scanning Time (s)', flag=INT_ONLY)
 
         self.startBtn = wx.Button(parent=self, id=wx.ID_ANY, label='Start')
         self.startBtn.SetFont(wx.Font(pointSize=20, family=wx.MODERN, style=wx.NORMAL, weight=wx.NORMAL))
         self.startBtn.SetForegroundColour(COLORS['normalText'])
         self.startBtn.SetBackgroundColour(COLORS['panelTertiary'])
         self.startBtn.Bind(event=wx.EVT_BUTTON, handler=self.OnStart)
+        self.startBtn.SetMinSize((-1, 60))
+        self.startBtn.SetMaxSize((-1, 60))
 
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         btnSizer.AddSpacer(item=(0, 0), proportion=1, flag=wx.EXPAND)
-        btnSizer.Add(item=self.startBtn, proportion=0, flag=wx.EXPAND)
+        btnSizer.Add(item=self.startBtn, proportion=1, flag=wx.EXPAND)
 
         sizer.Add(item=self.countdownCtrl, proportion=0, flag=wx.ALL | wx.EXPAND, border=5)
         sizer.Add(item=self.scanTimeCtrl, proportion=0, flag=wx.ALL | wx.EXPAND, border=5)
         sizer.AddSpacer(item=(0, 0), proportion=1, flag=wx.EXPAND)
-        sizer.Add(item=btnSizer, proportion=1, flag=wx.ALL | wx.EXPAND, border=5)
+        sizer.Add(item=btnSizer, proportion=0, flag=wx.ALL | wx.EXPAND, border=5)
+
+    def ValidInput(self):
+        for ctrl in [self.countdownCtrl, self.scanTimeCtrl]:
+            if ctrl.numCtrl.GetValidator().Validate(ctrl.numCtrl) is False:
+                return False
+
+        return True
 
     def OnStart(self, evt):
+        if not self.ValidInput():
+            return
+
         countdown = self.countdownCtrl.GetValue()
         scanTime = self.scanTimeCtrl.GetValue()
         params = {'countdown': countdown,
@@ -342,11 +358,147 @@ class ScanStartPanel(wx.Panel):
         pub.sendMessage('scanStart.Start', params=params)
 
 
+class CompassControl(wx.PyPanel):
+    def __init__(self, parent, id=wx.ID_ANY, pos=wx.DefaultPosition,
+                 size=wx.DefaultSize, style=wx.NO_BORDER, name='CompassControl'):
+
+        super(CompassControl, self).__init__(parent, id, pos, size, style, name)
+        self.InheritAttributes()
+        self.SetInitialSize(size)
+        self.SetBackgroundColour('white')
+        self.SetForegroundColour('black')
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.Bind(wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground)
+
+
+        self._centerX = 0
+        self._centerY = 0
+        self._radius = 0
+
+        # Angle offset to make 0 degrees direction different from unit circle
+        self._angleOffset = radians(-90)
+        self._expectedAngle = radians(0)
+        self._expectedWidth = radians(10)
+        self._currentAngle = radians(0)
+
+        font = wx.Font(pointSize=24, style=wx.NORMAL, family=wx.SCRIPT, weight=wx.BOLD)
+        wx.PyPanel.SetFont(self, font)
+
+        # testThread = threading.Thread(target=self.testMethod)
+        # testThread.start()
+
+    def testMethod(self):
+        while True:
+
+            self.SetExpectedAngle(degrees(self._expectedAngle) + 0.5)
+            time.sleep(0.1)
+
+    def SetExpectedAngle(self, angle):
+        self._expectedAngle = radians(angle % 360)
+        self.Refresh()
+
+    def SetExpectedSliceWidth(self, angle):
+        self._expectedWidth = radians(angle % 360)
+
+    def SetCurrentAngle(self, angle):
+        self._currentAngle = radians(angle % 360)
+
+    def OnPaint(self, event):
+        size = self.ClientSize
+        dc = wx.BufferedPaintDC(self, wx.EmptyBitmap(*size))
+        dc = wx.GCDC(dc)
+        self.Draw(dc)
+        self.Update()
+
+    def Draw(self, dc):
+        width, height = self.GetClientSize()
+        if not width or not height:
+            return
+
+        backColour = self.GetBackgroundColour()
+        backBrush = wx.Brush(backColour, wx.SOLID)
+        dc.SetBackground(backBrush)
+        dc.SetBrush(backBrush)
+
+        foreColour = self.GetForegroundColour()
+        dc.SetTextForeground(foreColour)
+
+        dc.SetFont(self.GetFont())
+        dc.Clear()
+
+        txtSpacingX, txtSpacingY = dc.GetTextExtent('W')
+        self._centerX = width // 2.0
+        self._centerY = height // 2.0
+        txtSpacing = max([txtSpacingX, txtSpacingY])
+        self._radius = min([self._centerX, self._centerY]) - txtSpacing
+
+        self.DrawCompass(dc, width, height)
+        self.DrawExpectedDirection(dc)
+
+    def DrawCompass(self, dc, width, height):
+        dc.SetPen(wx.Pen(self.GetForegroundColour(), width=3, style=wx.SOLID))
+
+        # Draw the main circle
+        dc.DrawCircle(self._centerX, self._centerY, self._radius)
+
+        # Draw center-point circle
+        dc.SetBrush(wx.BLACK_BRUSH)
+        dc.DrawCircle(self._centerX, self._centerY, 5)
+
+        # Draw cardinal direction labels
+        txtSpacingX, txtSpacingY = dc.GetTextExtent('W')
+        dc.DrawText('W', self._centerX - self._radius - (1.5 * txtSpacingX), self._centerY - (txtSpacingY // 2.0))
+
+        txtSpacingX, txtSpacingY = dc.GetTextExtent('N')
+        dc.DrawText('N', self._centerX - (txtSpacingX // 2.0), self._centerY - self._radius - txtSpacingY)
+
+        txtSpacingX, txtSpacingY = dc.GetTextExtent('E')
+        dc.DrawText('E', self._centerX + self._radius + (txtSpacingX * 0.5), self._centerY - (txtSpacingY // 2.0))
+
+        txtSpacingX, txtSpacingY = dc.GetTextExtent('S')
+        dc.DrawText('S', self._centerX - (txtSpacingX // 2.0), self._centerY + self._radius)
+
+    def DrawExpectedDirection(self, dc):
+        dc.SetPen(wx.Pen(self.GetForegroundColour(), width=1, style=wx.SOLID))
+        dc.SetBrush(wx.Brush(self.GetForegroundColour(), wx.SOLID))
+        rAngle1 = self._angleOffset + self._expectedAngle - (self._expectedWidth / 2.0) + 2
+        lineX1 = self._centerX + self._radius * cos(rAngle1)
+        lineY1 = self._centerY + self._radius * sin(rAngle1) - 2
+
+        rAngle2 = self._angleOffset + self._expectedAngle + (self._expectedWidth / 2.0) + 2
+        lineX2 = self._centerX + self._radius * cos(rAngle2)
+        lineY2 = self._centerY + self._radius * sin(rAngle2) - 2
+
+        dc.DrawLine(self._centerX, self._centerY, lineX1, lineY1)
+        dc.DrawLine(self._centerX, self._centerY, lineX2, lineY2)
+
+        rAngle = self._angleOffset + self._expectedAngle
+        x3 = self._radius * cos(rAngle) / 2.0
+        y3 = self._radius * sin(rAngle) / 2.0
+
+        dc.SetBrush(wx.Brush('#79d2a6', wx.SOLID))
+        dc.SetPen(wx.Pen('black', width=3, style=wx.TRANSPARENT))
+        dc.DrawEllipticArc(self._centerX - self._radius + 2,
+                           self._centerY - self._radius + 2,
+                           2.0 * self._radius - 4,
+                           2.0 * self._radius - 4,
+                           degrees(-rAngle1),
+                           degrees(-rAngle2))
+
+
+
+    def OnEraseBackground(self, event):
+        pass
+
+
 class TextValidator(wx.PyValidator):
-    def __init__(self, flag=None, *args, **kwargs):
+    def __init__(self, flag=None, validate=None, *args, **kwargs):
         super(TextValidator, self).__init__(*args, **kwargs)
         self.flag = flag
         self.Bind(wx.EVT_CHAR, self.OnChar)
+
+        if validate:
+            self.Validate = validate
 
     def Clone(self):
         return TextValidator(self.flag)
@@ -401,24 +553,24 @@ class TextValidator(wx.PyValidator):
             event.Skip()
             return
 
-        if self.flag == INT_ONLY or self.flag == FLOAT_ONLY and chr(key) in string.digits:
+        if (self.flag == INT_ONLY or self.flag == FLOAT_ONLY) and chr(key) in string.digits:
             event.Skip()
             return
 
-        if self.flag == FLOAT_ONLY \
-                and (key == 46):
+        if self.flag == FLOAT_ONLY and (key == 46):
             event.Skip()
             return
 
-        if not wx.Validator_IsSilient():
+        if not wx.Validator_IsSilent():
             wx.Bell()
 
         return
 
-class FloatTextControl(wx.BoxSizer):
-    def __init__(self, parent, label):
-        super(FloatTextControl, self).__init__(wx.HORIZONTAL)
+class NumTextCtrl(wx.BoxSizer):
+    def __init__(self, parent, label, flag=FLOAT_ONLY):
+        super(NumTextCtrl, self).__init__(wx.HORIZONTAL)
 
+        self.flag = flag
         font = wx.Font(
             pointSize=22,
             family=wx.DECORATIVE,
@@ -429,7 +581,7 @@ class FloatTextControl(wx.BoxSizer):
         self.labelText.SetFont(font)
         self.labelText.SetForegroundColour('#000000')
 
-        self.numCtrl = wx.TextCtrl(parent=parent, id=wx.ID_ANY, style=wx.TE_RIGHT, validator=TextValidator(FLOAT_ONLY))
+        self.numCtrl = wx.TextCtrl(parent=parent, id=wx.ID_ANY, style=wx.TE_RIGHT, validator=TextValidator(self.flag))
         self.numCtrl.SetFont(font)
         self.numCtrl.SetForegroundColour(COLORS['normalText'])
         self.numCtrl.SetMinSize((150, -1))
@@ -440,7 +592,12 @@ class FloatTextControl(wx.BoxSizer):
 
     def GetValue(self):
         try:
-            val = float(self.numCtrl.GetValue())
+            if self.flag is FLOAT_ONLY:
+                val = float(self.numCtrl.GetValue())
+            elif self.flag is INT_ONLY:
+                val = int(self.numCtrl.GetValue())
+            else:
+                val = self.numCtrl.GetValue()
         except ValueError:
             return None
 
