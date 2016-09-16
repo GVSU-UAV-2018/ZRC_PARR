@@ -55,7 +55,8 @@ class MainWindowController(object):
         self.stopTimerFlag.set()
         if self.uavSeeker:
             self.uavSeeker.Dispose()
-        self.updateTimer.join(timeout=0.1)
+        if self.updateTimer.is_alive():
+            self.updateTimer.join(timeout=0.1)
         self.mainWinView.Destroy()
 
 

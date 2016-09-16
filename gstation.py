@@ -3,12 +3,12 @@
 import zrc_core
 
 import wx
-from wx.lib.masked import NumCtrl
-from pubsub import  pub
+from pubsub import pub
+import platform
 import wx.lib.newevent
 import sys, os
 import json
-from math import pi, cos, sin, radians, degrees
+from math import pi, cos, sin, radians, degrees, fabs
 import threading
 import time
 import logging
@@ -22,8 +22,7 @@ COLORS = {'normalText': '#000000',
           'panelTertiary': '#64B5F6',
           'windowBg': '#1A2C45'}
 
-LOCAL_ENCODING = 'utf-8'
-DEGREE_SIGN = u'\xb0'.encode(LOCAL_ENCODING)
+
 
 DIRECTORY = os.path.dirname(__file__)
 
@@ -31,6 +30,12 @@ ALPHA_ONLY = 1
 INT_ONLY = 2
 FLOAT_ONLY = 3
 
+CURRENT_SYS = platform.system()
+LOCAL_ENCODING = 'utf-8'
+if CURRENT_SYS == 'Windows':
+    DEGREE_SIGN = chr(176)
+else:
+    DEGREE_SIGN = u'\xb0'.encode(LOCAL_ENCODING)
 
 class MainWindow(wx.Frame):
     def __init__(self, *args, **kwargs):
@@ -76,7 +81,7 @@ class MainWindow(wx.Frame):
             border=3)
         self.mainSizer.Add(
             item=self.topSizer,
-            proportion=10,
+            proportion=3,
             flag=wx.LEFT | wx.TOP | wx.RIGHT | wx.EXPAND,
             border=3)
 
@@ -104,9 +109,9 @@ class MainWindow(wx.Frame):
 
         self.mainSizer.Add(
             item=self.bottomSizer,
-            proportion=5,
+            proportion=1,
             flag=wx.ALL | wx.EXPAND,
-            border=3)
+            border=1)
 
     def OnClose(self, evt):
         self.Close()
@@ -298,9 +303,9 @@ class ScanResultsPanel(wx.Panel):
 
         self.directionDisplay = DisplayControl(parent=self, label='Direction', unit=DEGREE_SIGN)
         self.directionDisplay.SetValue(140.0)
-        self.powerDisplay = DisplayControl(parent=self, label='Power', unit='dB')
+        self.powerDisplay = DisplayControl(parent=self, label='Power', unit=' dB')
         self.powerDisplay.SetValue(13.0)
-        self.freqDisplay = DisplayControl(parent=self, label='Frequency', unit='MHz')
+        self.freqDisplay = DisplayControl(parent=self, label='Frequency', unit=' MHz')
         self.freqDisplay.SetValue(153.405)
 
         leftSizer = wx.BoxSizer(wx.VERTICAL)
@@ -365,8 +370,8 @@ class CompassControl(wx.PyPanel):
         super(CompassControl, self).__init__(parent, id, pos, size, style, name)
         self.InheritAttributes()
         self.SetInitialSize(size)
-        self.SetBackgroundColour('white')
-        self.SetForegroundColour('black')
+        self.SetBackgroundColour('#FFFFFF')
+        self.SetForegroundColour('#000000')
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground)
 
@@ -376,7 +381,7 @@ class CompassControl(wx.PyPanel):
         self._radius = 0
 
         # Angle offset to make 0 degrees direction different from unit circle
-        self._angleOffset = radians(-90)
+        self._angleOffset = radians(90)
         self._expectedAngle = radians(0)
         self._expectedWidth = radians(10)
         self._currentAngle = radians(0)
@@ -384,13 +389,13 @@ class CompassControl(wx.PyPanel):
         font = wx.Font(pointSize=24, style=wx.NORMAL, family=wx.SCRIPT, weight=wx.BOLD)
         wx.PyPanel.SetFont(self, font)
 
-        # testThread = threading.Thread(target=self.testMethod)
-        # testThread.start()
+        testThread = threading.Thread(target=self.testMethod)
+        testThread.start()
 
     def testMethod(self):
         while True:
 
-            self.SetExpectedAngle(degrees(self._expectedAngle) + 0.5)
+            self.SetExpectedAngle(degrees(self._expectedAngle) + 1)
             time.sleep(0.1)
 
     def SetExpectedAngle(self, angle):
@@ -399,13 +404,15 @@ class CompassControl(wx.PyPanel):
 
     def SetExpectedSliceWidth(self, angle):
         self._expectedWidth = radians(angle % 360)
+        self.Refresh()
 
     def SetCurrentAngle(self, angle):
         self._currentAngle = radians(angle % 360)
+        self.Refresh()
 
     def OnPaint(self, event):
         size = self.ClientSize
-        dc = wx.BufferedPaintDC(self, wx.EmptyBitmap(*size))
+        dc = wx.BufferedPaintDC(self)
         dc = wx.GCDC(dc)
         self.Draw(dc)
         self.Update()
@@ -415,11 +422,7 @@ class CompassControl(wx.PyPanel):
         if not width or not height:
             return
 
-        backColour = self.GetBackgroundColour()
-        backBrush = wx.Brush(backColour, wx.SOLID)
-        dc.SetBackground(backBrush)
-        dc.SetBrush(backBrush)
-
+        dc.SetBackground(wx.Brush(self.GetBackgroundColour(), wx.SOLID))
         foreColour = self.GetForegroundColour()
         dc.SetTextForeground(foreColour)
 
@@ -427,65 +430,77 @@ class CompassControl(wx.PyPanel):
         dc.Clear()
 
         txtSpacingX, txtSpacingY = dc.GetTextExtent('W')
-        self._centerX = width // 2.0
-        self._centerY = height // 2.0
+        self._centerX = width / 2.0
+        self._centerY = height / 2.0
         txtSpacing = max([txtSpacingX, txtSpacingY])
         self._radius = min([self._centerX, self._centerY]) - txtSpacing
 
-        self.DrawCompass(dc, width, height)
         self.DrawExpectedDirection(dc)
+        self.DrawCompassTicks(dc)
+        self.DrawCompass(dc)
 
-    def DrawCompass(self, dc, width, height):
+    def DrawCompass(self, dc):
         dc.SetPen(wx.Pen(self.GetForegroundColour(), width=3, style=wx.SOLID))
-
+        dc.SetBrush(wx.TRANSPARENT_BRUSH)
+        dc.SetFont(self.GetFont())
         # Draw the main circle
         dc.DrawCircle(self._centerX, self._centerY, self._radius)
 
         # Draw center-point circle
         dc.SetBrush(wx.BLACK_BRUSH)
-        dc.DrawCircle(self._centerX, self._centerY, 5)
+        dc.DrawCircle(self._centerX, self._centerY, 2)
 
         # Draw cardinal direction labels
         txtSpacingX, txtSpacingY = dc.GetTextExtent('W')
-        dc.DrawText('W', self._centerX - self._radius - (1.5 * txtSpacingX), self._centerY - (txtSpacingY // 2.0))
+        dc.DrawText('W', self._centerX - self._radius - (1.5 * txtSpacingX), self._centerY - (txtSpacingY / 2.0))
 
         txtSpacingX, txtSpacingY = dc.GetTextExtent('N')
-        dc.DrawText('N', self._centerX - (txtSpacingX // 2.0), self._centerY - self._radius - txtSpacingY)
+        dc.DrawText('N', self._centerX - (txtSpacingX / 2.0), self._centerY - self._radius - txtSpacingY)
 
         txtSpacingX, txtSpacingY = dc.GetTextExtent('E')
-        dc.DrawText('E', self._centerX + self._radius + (txtSpacingX * 0.5), self._centerY - (txtSpacingY // 2.0))
+        dc.DrawText('E', self._centerX + self._radius + (txtSpacingX * 0.5), self._centerY - (txtSpacingY / 2.0))
 
         txtSpacingX, txtSpacingY = dc.GetTextExtent('S')
-        dc.DrawText('S', self._centerX - (txtSpacingX // 2.0), self._centerY + self._radius)
+        dc.DrawText('S', self._centerX - (txtSpacingX / 2.0), self._centerY + self._radius)
+
+    def DrawCompassTicks(self, dc):
+        dc.SetPen(wx.Pen(self.GetForegroundColour(), width=1, style=wx.SOLID))
+        tickStep = 30
+        tickSize = 15
+        txtSpacing = 0
+        dc.SetFont(wx.Font(pointSize=12, style=wx.NORMAL, family=wx.SWISS, weight=wx.NORMAL))
+        for tickAngle in range(0, 360, tickStep):
+            tickRadian = radians(-tickAngle) - self._angleOffset
+            tickX1 = self._centerX + (self._radius - tickSize) * cos(tickRadian)
+            tickY1 = self._centerY + (self._radius - tickSize) * sin(tickRadian)
+            tickX2 = self._centerX + self._radius * cos(tickRadian)
+            tickY2 = self._centerY + self._radius * sin(tickRadian)
+            dc.DrawLine(tickX1, tickY1, tickX2, tickY2)
+
+            txtX, txtY = dc.GetTextExtent(str(tickAngle))
+            txtX = (txtX / 2) * sin(radians(tickAngle + degrees(self._angleOffset)))
+            txtY = (txtY / 2) * cos(radians(tickAngle + degrees(self._angleOffset)))
+            spacingX = txtSpacing * sin(radians(tickAngle + degrees(self._angleOffset)))
+            spacingY = txtSpacing * cos(radians(tickAngle + degrees(self._angleOffset)))
+            dc.DrawRotatedText(str(tickAngle), tickX1 - txtX - spacingX, tickY1 - txtY - spacingY, tickAngle)
+
 
     def DrawExpectedDirection(self, dc):
-        dc.SetPen(wx.Pen(self.GetForegroundColour(), width=1, style=wx.SOLID))
-        dc.SetBrush(wx.Brush(self.GetForegroundColour(), wx.SOLID))
-        rAngle1 = self._angleOffset + self._expectedAngle - (self._expectedWidth / 2.0) + 2
-        lineX1 = self._centerX + self._radius * cos(rAngle1)
-        lineY1 = self._centerY + self._radius * sin(rAngle1) - 2
+        dc.SetPen(wx.TRANSPARENT_PEN)
+        dc.SetBrush(wx.Brush('#3FE044', wx.SOLID))
 
-        rAngle2 = self._angleOffset + self._expectedAngle + (self._expectedWidth / 2.0) + 2
-        lineX2 = self._centerX + self._radius * cos(rAngle2)
-        lineY2 = self._centerY + self._radius * sin(rAngle2) - 2
+        rAngle1 = self._angleOffset + self._expectedAngle - (self._expectedWidth / 2.0)
+        rAngle2 = self._angleOffset + self._expectedAngle + (self._expectedWidth / 2.0)
 
-        dc.DrawLine(self._centerX, self._centerY, lineX1, lineY1)
-        dc.DrawLine(self._centerX, self._centerY, lineX2, lineY2)
+        dc.DrawEllipticArc(self._centerX - self._radius,
+                           self._centerY - self._radius,
+                           2.0 * self._radius,
+                           2.0 * self._radius,
+                           degrees(rAngle1) - 0.5,
+                           degrees(rAngle2) - 0.5)
 
-        rAngle = self._angleOffset + self._expectedAngle
-        x3 = self._radius * cos(rAngle) / 2.0
-        y3 = self._radius * sin(rAngle) / 2.0
-
-        dc.SetBrush(wx.Brush('#79d2a6', wx.SOLID))
-        dc.SetPen(wx.Pen('black', width=3, style=wx.TRANSPARENT))
-        dc.DrawEllipticArc(self._centerX - self._radius + 2,
-                           self._centerY - self._radius + 2,
-                           2.0 * self._radius - 4,
-                           2.0 * self._radius - 4,
-                           degrees(-rAngle1),
-                           degrees(-rAngle2))
-
-
+    def DrawCurrentDirection(self, dc):
+        pass
 
     def OnEraseBackground(self, event):
         pass
