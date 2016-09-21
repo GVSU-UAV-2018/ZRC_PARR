@@ -14,6 +14,7 @@ import time
 import logging
 import controllers
 import string
+import logging
 
 COLORS = {'normalText': '#000000',
           'lightText': '#728CB0',
@@ -61,7 +62,7 @@ class MainWindow(wx.Frame):
         self.childPanel.SetSizer(self.mainSizer)
 
         self.settingsDisplayPanel = SettingsDisplayPanel(parent=self.childPanel)
-        self.scanCirclePanel = ScanCirclePanel(parent=self.childPanel)
+        self.compassPanel = CompassControl(parent=self.childPanel)
         self.statusDisplayPanel = StatusDisplayPanel(parent=self.childPanel)
 
         self.topSizer = wx.BoxSizer(orient=wx.HORIZONTAL)
@@ -71,7 +72,7 @@ class MainWindow(wx.Frame):
             flag=wx.RIGHT | wx.EXPAND,
             border=3)
         self.topSizer.Add(
-            item=self.scanCirclePanel,
+            item=self.compassPanel,
             proportion=5,
             flag=wx.EXPAND)
         self.topSizer.Add(
@@ -356,11 +357,19 @@ class ScanStartPanel(wx.Panel):
         if not self.ValidInput():
             return
 
-        countdown = self.countdownCtrl.GetValue()
-        scanTime = self.scanTimeCtrl.GetValue()
-        params = {'countdown': countdown,
-                  'scanTime': scanTime}
-        pub.sendMessage('scanStart.Start', params=params)
+        labelText = self.startBtn.GetLabelText()
+
+        if labelText == 'Start':
+            countdown = self.countdownCtrl.GetValue()
+            scanTime = self.scanTimeCtrl.GetValue()
+            self.startBtn.SetLabelText('Stop')
+            params = {'totalCountdown': countdown,
+                      'totalScanTime': scanTime}
+            pub.sendMessage('scanStart.Start', params=params)
+
+        elif labelText == 'Stop':
+            self.startBtn.SetLabelText('Start')
+            pub.sendMessage('scanStart.Stop')
 
 
 class CompassControl(wx.PyPanel):
@@ -374,48 +383,63 @@ class CompassControl(wx.PyPanel):
         self.SetForegroundColour('#000000')
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground)
-
+        self.Bind(wx.EVT_SIZE, self.OnSize)
 
         self._centerX = 0
         self._centerY = 0
         self._radius = 0
+        self._tickSize = 0
 
         # Angle offset to make 0 degrees direction different from unit circle
         self._angleOffset = radians(90)
         self._expectedAngle = radians(0)
         self._expectedWidth = radians(10)
-        self._currentAngle = radians(0)
+        self._currentAngle = radians(15)
 
-        font = wx.Font(pointSize=24, style=wx.NORMAL, family=wx.SCRIPT, weight=wx.BOLD)
-        wx.PyPanel.SetFont(self, font)
+        font = wx.Font(pointSize=24, style=wx.NORMAL, family=wx.MODERN, weight=wx.BOLD)
+        self.SetFont(font)
 
-        testThread = threading.Thread(target=self.testMethod)
-        testThread.start()
-
-    def testMethod(self):
-        while True:
-
-            self.SetExpectedAngle(degrees(self._expectedAngle) + 1)
-            time.sleep(0.1)
-
-    def SetExpectedAngle(self, angle):
-        self._expectedAngle = radians(angle % 360)
+    def OnSize(self, event):
+        '''
+        Event handler that responds to panel resize event.
+        :param event: event arguments
+        '''
         self.Refresh()
 
-    def SetExpectedSliceWidth(self, angle):
-        self._expectedWidth = radians(angle % 360)
-        self.Refresh()
+    def SetExpectedAngle(self, angle, refresh=True):
+        newAngle = radians(angle % 360)
 
-    def SetCurrentAngle(self, angle):
-        self._currentAngle = radians(angle % 360)
-        self.Refresh()
+        if newAngle == self._expectedAngle:
+            return
+
+        self._expectedAngle = newAngle
+        if refresh:
+            self.Refresh()
+
+    def SetExpectedSliceWidth(self, angle, refresh=True):
+        newAngle = radians(angle % 360)
+
+        if newAngle == self._expectedWidth:
+            return
+
+        self._expectedWidth = newAngle
+        if refresh:
+            self.Refresh()
+
+    def SetCurrentAngle(self, angle, refresh=True):
+        newAngle = radians(angle % 360)
+
+        if newAngle == self._currentAngle:
+            return
+
+        self._currentAngle = newAngle
+        if refresh:
+            self.Refresh()
 
     def OnPaint(self, event):
-        size = self.ClientSize
         dc = wx.BufferedPaintDC(self)
         dc = wx.GCDC(dc)
         self.Draw(dc)
-        self.Update()
 
     def Draw(self, dc):
         width, height = self.GetClientSize()
@@ -426,23 +450,36 @@ class CompassControl(wx.PyPanel):
         foreColour = self.GetForegroundColour()
         dc.SetTextForeground(foreColour)
 
-        dc.SetFont(self.GetFont())
         dc.Clear()
 
-        txtSpacingX, txtSpacingY = dc.GetTextExtent('W')
+        font = self.GetFont()
+        if not font:
+            font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+
+        width, height = self.GetClientSize()
+        ptSize = int(min([width, height]) * 0.07)
+        font.SetPointSize(ptSize)
+        self.SetFont(font)
+        dc.SetFont(font)
+
         self._centerX = width / 2.0
         self._centerY = height / 2.0
+
+        txtSpacingX, txtSpacingY = dc.GetTextExtent('W')
         txtSpacing = max([txtSpacingX, txtSpacingY])
-        self._radius = min([self._centerX, self._centerY]) - txtSpacing
+        self._radius = min([self._centerX, self._centerY]) - (txtSpacing * 1.15)
+        self._tickSize = self._radius * 0.05
 
         self.DrawExpectedDirection(dc)
         self.DrawCompassTicks(dc)
         self.DrawCompass(dc)
+        self.DrawCurrentDirection(dc)
 
     def DrawCompass(self, dc):
+
+        dc.SetFont(self.GetFont())
         dc.SetPen(wx.Pen(self.GetForegroundColour(), width=3, style=wx.SOLID))
         dc.SetBrush(wx.TRANSPARENT_BRUSH)
-        dc.SetFont(self.GetFont())
         # Draw the main circle
         dc.DrawCircle(self._centerX, self._centerY, self._radius)
 
@@ -452,38 +489,39 @@ class CompassControl(wx.PyPanel):
 
         # Draw cardinal direction labels
         txtSpacingX, txtSpacingY = dc.GetTextExtent('W')
-        dc.DrawText('W', self._centerX - self._radius - (1.5 * txtSpacingX), self._centerY - (txtSpacingY / 2.0))
+        xPos = self._centerX - self._radius - (1.5 * txtSpacingX), self._centerY - (txtSpacingY // 2.0)
+        dc.DrawText('W', self._centerX - self._radius - (1.4 * txtSpacingX), self._centerY - (txtSpacingY // 2.0))
 
         txtSpacingX, txtSpacingY = dc.GetTextExtent('N')
         dc.DrawText('N', self._centerX - (txtSpacingX / 2.0), self._centerY - self._radius - txtSpacingY)
 
         txtSpacingX, txtSpacingY = dc.GetTextExtent('E')
-        dc.DrawText('E', self._centerX + self._radius + (txtSpacingX * 0.5), self._centerY - (txtSpacingY / 2.0))
+        dc.DrawText('E', self._centerX + self._radius + (txtSpacingX / 2.0), self._centerY - (txtSpacingY // 2.0))
 
         txtSpacingX, txtSpacingY = dc.GetTextExtent('S')
         dc.DrawText('S', self._centerX - (txtSpacingX / 2.0), self._centerY + self._radius)
 
     def DrawCompassTicks(self, dc):
-        dc.SetPen(wx.Pen(self.GetForegroundColour(), width=1, style=wx.SOLID))
+        dc.SetPen(wx.Pen(self.GetForegroundColour(), width=2, style=wx.SOLID))
         tickStep = 30
-        tickSize = 15
-        txtSpacing = 0
-        dc.SetFont(wx.Font(pointSize=12, style=wx.NORMAL, family=wx.SWISS, weight=wx.NORMAL))
+
+        dc.SetFont(wx.Font(pointSize=self.GetFont().GetPointSize() // 2, style=wx.NORMAL, family=wx.SWISS, weight=wx.NORMAL))
         for tickAngle in range(0, 360, tickStep):
-            tickRadian = radians(-tickAngle) - self._angleOffset
-            tickX1 = self._centerX + (self._radius - tickSize) * cos(tickRadian)
-            tickY1 = self._centerY + (self._radius - tickSize) * sin(tickRadian)
-            tickX2 = self._centerX + self._radius * cos(tickRadian)
-            tickY2 = self._centerY + self._radius * sin(tickRadian)
-            dc.DrawLine(tickX1, tickY1, tickX2, tickY2)
+            tickX1, tickY1 = self.DrawTick(dc, tickAngle, self._tickSize)
 
             txtX, txtY = dc.GetTextExtent(str(tickAngle))
-            txtX = (txtX / 2) * sin(radians(tickAngle + degrees(self._angleOffset)))
-            txtY = (txtY / 2) * cos(radians(tickAngle + degrees(self._angleOffset)))
-            spacingX = txtSpacing * sin(radians(tickAngle + degrees(self._angleOffset)))
-            spacingY = txtSpacing * cos(radians(tickAngle + degrees(self._angleOffset)))
-            dc.DrawRotatedText(str(tickAngle), tickX1 - txtX - spacingX, tickY1 - txtY - spacingY, tickAngle)
+            txtX = (txtX / 2) * sin(radians(tickAngle) + self._angleOffset)
+            txtY = (txtY / 2) * cos(radians(tickAngle) + self._angleOffset)
+            dc.DrawRotatedText(str(tickAngle), tickX1 - txtX, tickY1 - txtY, tickAngle)
 
+    def DrawTick(self, dc, angle, tickSize):
+        tickRadian = radians(-angle) - self._angleOffset
+        tickX1 = self._centerX + (self._radius - tickSize) * cos(tickRadian)
+        tickY1 = self._centerY + (self._radius - tickSize) * sin(tickRadian)
+        tickX2 = self._centerX + self._radius * cos(tickRadian)
+        tickY2 = self._centerY + self._radius * sin(tickRadian)
+        dc.DrawLine(tickX1, tickY1, tickX2, tickY2)
+        return (tickX1, tickY1)
 
     def DrawExpectedDirection(self, dc):
         dc.SetPen(wx.TRANSPARENT_PEN)
@@ -492,15 +530,38 @@ class CompassControl(wx.PyPanel):
         rAngle1 = self._angleOffset + self._expectedAngle - (self._expectedWidth / 2.0)
         rAngle2 = self._angleOffset + self._expectedAngle + (self._expectedWidth / 2.0)
 
-        dc.DrawEllipticArc(self._centerX - self._radius,
-                           self._centerY - self._radius,
-                           2.0 * self._radius,
-                           2.0 * self._radius,
-                           degrees(rAngle1) - 0.5,
-                           degrees(rAngle2) - 0.5)
+        dc.DrawEllipticArc(x=self._centerX - self._radius,
+                           y=self._centerY - self._radius,
+                           w=2.0 * self._radius,
+                           h=2.0 * self._radius,
+                           start=degrees(rAngle1),
+                           end=degrees(rAngle2))
 
     def DrawCurrentDirection(self, dc):
-        pass
+        angle = self._currentAngle - self._angleOffset
+        x = self._centerX - self._radius * cos(-angle)
+        y = self._centerY - self._radius * sin(-angle)
+
+        gc = dc.GetGraphicsContext()
+
+        if gc:
+            gc.SetPen(wx.Pen('#000000', width=2, style=wx.NORMAL))
+            path = gc.CreatePath()
+            path.MoveToPoint(self._centerX, self._centerY)
+            path.AddLineToPoint(x, y)
+            gc.StrokePath(path)
+
+    # def DoGetBestSize(self, dc):
+    #     font = self.GetFont()
+    #
+    #     if not font:
+    #         font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+    #
+    #     dc = wx.ClientDC(self)
+    #     dc.SetFont(font)
+
+    def AcceptsFocusFromKeyboard(self):
+        return False
 
     def OnEraseBackground(self, event):
         pass
@@ -669,6 +730,7 @@ class DisplayControl(wx.Panel):
 
 
 if __name__ == '__main__':
+    #logging.basicConfig(format='%(asctime)s --%(levelname)s-- %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
     try:
         try:
             with open('config.json') as data_file:

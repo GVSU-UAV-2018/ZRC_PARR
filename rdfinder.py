@@ -1,6 +1,10 @@
 import threading
+from serial import SerialException
 import time
 from zrc_core import MessageString, MessageType
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class UAVRadioFinder(object):
@@ -16,7 +20,7 @@ class UAVRadioFinder(object):
         self._scan_alive = threading.Event()
         self._scan_alive.set()
         self._scan_thread = threading.Thread(target=self._send_scanning)
-        self.scanning = False
+        self._scanning = False
 
         self._serial.subscribe(MessageString[MessageType.attitude], self.OnAttitudeReceived)
 
@@ -24,16 +28,52 @@ class UAVRadioFinder(object):
         self._heading = msg.heading
         self._altitude = msg.altitude
 
+    def UpdateScanSettings(self, gain=None, freq=None, snr=None):
+        """
+        Update internal scan settings variables and send a packet
+        to the UAV indicating SDR scan settings should be updated.
+        :param gain: SDR receiver gain
+        :param freq: scanning frequency of target
+        :param snr: snr threshold in which to trigger scan frequency detection
+        :return: True if packet sent, false otherwise.
+        """
+        if not gain and not freq and not snr:
+            return False
+        else:
+            try:
+                self.gain = gain or self.gain
+                self.scanFrequency = freq or self.scanFrequency
+                self.snrThreshold = snr or self.snrThreshold
+
+                self._serial.send_scan_settings(self.gain,
+                                                self.scanFrequency,
+                                                self.snrThreshold)
+                return True
+            except SerialException:
+                return False
+
     def UpdateScanSettings(self):
-        self._serial.send_scan_settings(self.gain,
-                                        self.scanFrequency,
-                                        self.snrThreshold)
+        """
+        Send scan settings packet to UAV indicating that the
+        SDR scan setting should be updated
+        :return: True if packet send, false otherwise
+        """
+        try:
+            self._serial.send_scan_settings(self.gain,
+                                            self.scanFrequency,
+                                            self.snrThreshold)
+            return True
+        except SerialException:
+            return False
 
     def StartScan(self):
-        self.scanning = True
+        self._scanning = True
 
     def StopScan(self):
-        self.scanning = False
+        self._scanning = False
+
+    def IsScanning(self):
+        return self._scanning
 
     def GetAltitude(self):
         return self._heading
@@ -43,7 +83,10 @@ class UAVRadioFinder(object):
 
     def _send_scanning(self):
         while self._scan_alive:
-            self._serial.SendScanning(self.scanning)
+            try:
+                self._serial.SendScanning(self._scanning)
+            except SerialException:
+                logger.warn()
 
     def Start(self):
         self._scan_thread.start()
