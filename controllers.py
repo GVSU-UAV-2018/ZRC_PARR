@@ -8,6 +8,8 @@ import wx
 
 
 class MainWindowController(object):
+    SCAN_TIMER_INTERVAL = 0.05
+    UPDATE_TIMER_INTERVAL = 0.05
     def __init__(self, config):
         self.mainWinView = MainWindow(parent=None)
         self.mainWinView.Bind(event=wx.EVT_MENU,
@@ -19,12 +21,13 @@ class MainWindowController(object):
         self.statusView = self.mainWinView.statusDisplayPanel
         self.compassView = self.mainWinView.compassPanel
 
-        self.scanControlData = {'currentCountdown': 5.0,
-                                'totalCountdown': 5,
-                                'currentScanTime': 45.0,
-                                'totalScanTime': 45,
-                                'scanStartAngle': 0.0,
-                                'expectedAngle': 0.0}
+        self.currentCountdown = 5.0
+        self.totalCountdown = 5
+        self.currentScanTime = 45
+        self.totalScanTime = 45
+        self.scanStartAngle = 0.0
+        self.expectedAngle = 0.0
+        self.countdownStarted = False
 
         pub.subscribe(self.UpdateScanSettings, 'scanSettings.Submit')
         pub.subscribe(self._OnScanStart, 'scanStart.Start')
@@ -41,18 +44,22 @@ class MainWindowController(object):
             msgDlg = wx.MessageBox(parent=self.mainWinView, message='Failed to connect to serial port.')
 
         self.exitUpdateThread = Event()
-        self.updateTimer = TimerThread(event=self.exitUpdateThread, func=self._OnUpdateUI, interval=0.1)
+        self.updateTimer = TimerThread(event=self.exitUpdateThread,
+                                       func=self._OnUpdateUI,
+                                       interval=self.UPDATE_TIMER_INTERVAL)
 
         self.exitScanThread = Event()
-        self.scanTimer = TimerThread(event=self.exitScanThread, func=self._OnScanTimerTick, interval=0.1)
+        self.scanTimer = TimerThread(event=self.exitScanThread,
+                                     func=self._OnScanTimerTick,
+                                     interval=self.SCAN_TIMER_INTERVAL)
 
     def Initialize(self, serial=None):
-        '''Use to try to connect/reconnect to serial port later'''
+        """Use to try to connect/reconnect to serial port later"""
         try:
             self.serial = serial or SerialInterface(self.serialConfig)
             self.uavSeeker = UAVRadioFinder(self.serial)
         except SerialException as ex:
-            pass # swallow for now
+            raise
 
     def _OnScanStart(self, params):
         """
@@ -61,13 +68,14 @@ class MainWindowController(object):
         :param params: dictionary containing total scan time and countdown time
         :return: None
         """
-        self.scanControlData['currentCountdown'] = params['totalCountdown']
-        self.scanControlData['totalCountdown'] = params['totalCountdown']
-        self.scanControlData['totalScanTime'] = params['totalScanTime']
-        self.scanControlData['currentScanTime'] = params['totalScanTime']
-        self.scanControlData['scanStartAngle'] = self.uavSeeker.GetHeading()
+        self.currentCountdown = params['totalCountdown']
+        self.totalCountdown = params['totalCountdown']
+        self.totalScanTime = params['totalScanTime']
+        self.currentScanTime = params['totalScanTime']
+        self.countdownStarted = True
 
     def _OnScanStop(self):
+        self.countdownStarted = False
         self.uavSeeker.StopScan()
 
     def _OnScanTimerTick(self):
@@ -75,21 +83,30 @@ class MainWindowController(object):
         Event handler for timer tick of scanning timer.
         :return: None
         """
-        countdown = self.scanControlData['currentCountdown']
-        scanTime = self.scanControlData['currentScanTime']
+        if self.countdownStarted is not True:
+            return
 
-        if countdown > 0:
-                self.scanControlData['currentCountdown'] -= 0.1
-
-        elif countdown <= 0 < scanTime and not self.uavSeeker.IsScanning():
+        # Countdown time
+        if self.currentCountdown > 0 and self.countdownStarted:
+                self.currentCountdown -= self.SCAN_TIMER_INTERVAL
+                if(self.currentCountdown < 0):
+                    self.currentCountdown = 0
+        # Once countdown reaches zero, start the scanning
+        elif self.uavSeeker.IsScanning() is False and self.currentScanTime >= 0:
             self.uavSeeker.StartScan()
-            self.scanControlData['currentScanTime'] -= 0.1
+            self.scanStartAngle = self.uavSeeker.GetHeading()
+        # Decrement scanning timer
+        elif self.uavSeeker.IsScanning() and self.currentScanTime > 0:
+            self.currentScanTime -= self.SCAN_TIMER_INTERVAL
+            # If current scan time less than timer resolution, stop the scan
+            if self.currentScanTime <= 0:
+                self.uavSeeker.StopScan()
+                self.currentScanTime = 0.0
 
-        elif self.uavSeeker.IsScanning() and scanTime > 0:
-            self.scanControlData['currentScanTime'] -= 0.1
 
-        elif self.uavSeeker.IsScanning() and scanTime <= 0:
-            self.uavSeeker.StopScan()
+        self.UpdateScanDirection()
+        wx.CallAfter(self.statusView.SetScanTime, self.currentScanTime)
+        wx.CallAfter(self.statusView.SetCountdownTime, self.currentCountdown)
 
     def _OnUpdateUI(self):
         if self.uavSeeker is None:
@@ -98,26 +115,29 @@ class MainWindowController(object):
         wx.CallAfter(self.statusView.SetAltitude, self.uavSeeker.GetAltitude())
         wx.CallAfter(self.statusView.SetHeading, self.uavSeeker.GetHeading())
 
-        self._UpdateCompass()
+        if not self.uavSeeker:
+            return
 
-    def _UpdateCompass(self):
-        if self.uavSeeker is None:
+        currentHeading = self.uavSeeker.GetHeading()
+        wx.CallAfter(self.compassView.SetCurrentAngle, currentHeading, True)
+
+    def UpdateScanDirection(self):
+        if not self.uavSeeker:
             return
 
         def CalcExpectedAngle():
             try:
-                angle = self.scanControlData['scanStartAngle'] + \
-                        self.scanControlData['currentScanTime'] / self.scanControlData['totalScanTime']
+                angle = self.scanStartAngle - 360 * (self.currentScanTime / self.totalScanTime)
                 return angle
             except ZeroDivisionError:
                 return 0.0
 
         if self.uavSeeker.IsScanning():
             expAngle = CalcExpectedAngle()
-            wx.CallAfter(self.compassView.SetExpectedAngle(angle=expAngle, refresh=False))
+            wx.CallAfter(self.compassView.SetExpectedAngle, expAngle, True)
 
-        currentHeading = self.uavSeeker.GetHeading()
-        wx.CallAfter(self.compassView.SetCurrentAngle(angle=currentHeading))
+
+
 
     def UpdateScanSettings(self, params):
         self.uavSeeker.scanFrequency = params['freq']
@@ -129,15 +149,24 @@ class MainWindowController(object):
         self.mainWinView.Maximize()
         self.mainWinView.Show()
         self.updateTimer.start()
+        self.scanTimer.start()
+        self.uavSeeker.Start()
+
 
     def OnClose(self, evt):
-        if self.serial:
-            self.serial.Dispose()
+
         self.exitUpdateThread.set()
-        if self.uavSeeker:
-            self.uavSeeker.Dispose()
+        self.exitScanThread.set()
+
         if self.updateTimer.is_alive():
             self.updateTimer.join(timeout=0.1)
+        if self.scanTimer.is_alive():
+            self.scanTimer.join(timeout=0.1)
+        if self.uavSeeker:
+            self.uavSeeker.Dispose()
+        if self.serial:
+            self.serial.Dispose()
+
         self.mainWinView.Destroy()
 
 
@@ -146,6 +175,7 @@ class TimerThread(Thread):
         super(TimerThread, self).__init__()
         self.stopped = event
         self.interval = interval
+        self.daemon = True
 
         if callable(func):
             self.func = func

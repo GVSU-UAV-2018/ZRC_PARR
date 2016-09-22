@@ -199,10 +199,16 @@ class StatusDisplayPanel(wx.Panel):
             unit=DEGREE_SIGN)
         self._scanDirDisp.SetValue(320)
 
+        self._countdownTimeDisp = DisplayControl(
+            parent=self,
+            label='Countdown')
+        self._countdownTimeDisp.SetValue(0)
+
+
         self._scanTimeDisp = DisplayControl(
             parent=self,
             label='Scanning Time')
-        self._scanTimeDisp.SetValue('00:00')
+        self._scanTimeDisp.SetValue(0)
 
         statusSizer = wx.BoxSizer(orient=wx.VERTICAL)
         self.SetSizer(statusSizer)
@@ -218,6 +224,11 @@ class StatusDisplayPanel(wx.Panel):
             border=2)
         statusSizer.Add(
             item=self._scanDirDisp,
+            proportion=0,
+            flag=wx.ALL | wx.EXPAND,
+            border=2)
+        statusSizer.Add(
+            item=self._countdownTimeDisp,
             proportion=0,
             flag=wx.ALL | wx.EXPAND,
             border=2)
@@ -239,8 +250,13 @@ class StatusDisplayPanel(wx.Panel):
         dir = '{0:.2f}'.format(direction)
         self._scanDirDisp.SetValue(dir)
 
+    def SetCountdownTime(self, time):
+        formTime = '{0:.1f}'.format(time)
+        self._countdownTimeDisp.SetValue(formTime)
+
     def SetScanTime(self, time):
-        self._scanTimeDisp.SetValue(time)
+        formTime = '{0:.1f}'.format(time)
+        self._scanTimeDisp.SetValue(formTime)
 
 
 class ScanSettingsPanel(wx.Panel):
@@ -754,3 +770,4 @@ if __name__ == '__main__':
 
     except Exception as ex:
         print ex
+        print type(ex)

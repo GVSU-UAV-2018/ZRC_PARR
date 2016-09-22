@@ -20,6 +20,7 @@ class UAVRadioFinder(object):
         self._scan_alive = threading.Event()
         self._scan_alive.set()
         self._scan_thread = threading.Thread(target=self._send_scanning)
+        self._scan_thread.daemon = True
         self._scanning = False
 
         self._serial.subscribe(MessageString[MessageType.attitude], self.OnAttitudeReceived)
@@ -37,13 +38,14 @@ class UAVRadioFinder(object):
         :param snr: snr threshold in which to trigger scan frequency detection
         :return: True if packet sent, false otherwise.
         """
+        self._scanning = False
         if not gain and not freq and not snr:
             return False
         else:
             try:
                 self.gain = gain or self.gain
                 self.scanFrequency = freq or self.scanFrequency
-                self.snrThreshold = snr or self.snrThreshold
+                self.snrThreshold = snr or self.snrThresholds
 
                 self._serial.send_scan_settings(self.gain,
                                                 self.scanFrequency,
@@ -84,9 +86,12 @@ class UAVRadioFinder(object):
     def _send_scanning(self):
         while self._scan_alive:
             try:
-                self._serial.SendScanning(self._scanning)
+                self._serial.send_scanning(self._scanning)
+                time.sleep(1)
             except SerialException:
-                logger.warn()
+                time.sleep(1)
+
+
 
     def Start(self):
         self._scan_thread.start()
