@@ -20,6 +20,7 @@ class MainWindowController(object):
 
         self.statusView = self.mainWinView.statusDisplayPanel
         self.compassView = self.mainWinView.compassPanel
+        self.scanControlView = self.mainWinView.scanStartPanel
 
         self.currentCountdown = 5.0
         self.totalCountdown = 5
@@ -77,6 +78,7 @@ class MainWindowController(object):
     def _OnScanStop(self):
         self.countdownStarted = False
         self.uavSeeker.StopScan()
+        wx.CallAfter(self.compassView.SetExpectedAngleVisibility, visible=False)
 
     def _OnScanTimerTick(self):
         """
@@ -94,6 +96,7 @@ class MainWindowController(object):
         # Once countdown reaches zero, start the scanning
         elif self.uavSeeker.IsScanning() is False and self.currentScanTime >= 0:
             self.uavSeeker.StartScan()
+            wx.CallAfter(self.compassView.SetExpectedAngleVisibility, visible=True)
             self.scanStartAngle = self.uavSeeker.GetHeading()
         # Decrement scanning timer
         elif self.uavSeeker.IsScanning() and self.currentScanTime > 0:
@@ -102,6 +105,8 @@ class MainWindowController(object):
             if self.currentScanTime <= 0:
                 self.uavSeeker.StopScan()
                 self.currentScanTime = 0.0
+                wx.CallAfter(self.compassView.SetExpectedAngle, self.scanStartAngle)
+                wx.CallAfter(self.scanControlView.Stop)
 
 
         self.UpdateScanDirection()
@@ -109,6 +114,7 @@ class MainWindowController(object):
         wx.CallAfter(self.statusView.SetCountdownTime, self.currentCountdown)
 
     def _OnUpdateUI(self):
+
         if self.uavSeeker is None:
             return
 
@@ -136,9 +142,6 @@ class MainWindowController(object):
             expAngle = CalcExpectedAngle()
             wx.CallAfter(self.compassView.SetExpectedAngle, expAngle, True)
 
-
-
-
     def UpdateScanSettings(self, params):
         self.uavSeeker.scanFrequency = params['freq']
         self.uavSeeker.gain = params['gain']
@@ -148,6 +151,7 @@ class MainWindowController(object):
     def Show(self):
         self.mainWinView.Maximize()
         self.mainWinView.Show()
+        self.serial.start()
         self.updateTimer.start()
         self.scanTimer.start()
         self.uavSeeker.Start()

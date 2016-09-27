@@ -349,7 +349,7 @@ class ScanStartPanel(wx.Panel):
         self.startBtn.SetFont(wx.Font(pointSize=20, family=wx.MODERN, style=wx.NORMAL, weight=wx.NORMAL))
         self.startBtn.SetForegroundColour(COLORS['normalText'])
         self.startBtn.SetBackgroundColour(COLORS['panelTertiary'])
-        self.startBtn.Bind(event=wx.EVT_BUTTON, handler=self.OnStart)
+        self.startBtn.Bind(event=wx.EVT_BUTTON, handler=self._OnToggleScan)
         self.startBtn.SetMinSize((-1, 60))
         self.startBtn.SetMaxSize((-1, 60))
 
@@ -369,23 +369,29 @@ class ScanStartPanel(wx.Panel):
 
         return True
 
-    def OnStart(self, evt):
+    def _OnToggleScan(self, evt):
         if not self.ValidInput():
             return
 
         labelText = self.startBtn.GetLabelText()
 
         if labelText == 'Start':
-            countdown = self.countdownCtrl.GetValue()
-            scanTime = self.scanTimeCtrl.GetValue()
-            self.startBtn.SetLabelText('Stop')
-            params = {'totalCountdown': countdown,
-                      'totalScanTime': scanTime}
-            pub.sendMessage('scanStart.Start', params=params)
+            self.Start()
 
         elif labelText == 'Stop':
-            self.startBtn.SetLabelText('Start')
-            pub.sendMessage('scanStart.Stop')
+            self.Stop()
+
+    def Start(self):
+        countdown = self.countdownCtrl.GetValue()
+        scanTime = self.scanTimeCtrl.GetValue()
+        self.startBtn.SetLabelText('Stop')
+        params = {'totalCountdown': countdown,
+                  'totalScanTime': scanTime}
+        pub.sendMessage('scanStart.Start', params=params)
+
+    def Stop(self):
+        self.startBtn.SetLabelText('Start')
+        pub.sendMessage('scanStart.Stop')
 
 
 class CompassControl(wx.PyPanel):
@@ -411,6 +417,7 @@ class CompassControl(wx.PyPanel):
         self._expectedAngle = radians(0)
         self._expectedWidth = radians(10)
         self._currentAngle = radians(15)
+        self._expectedAngleVis = False
 
         font = wx.Font(pointSize=24, style=wx.NORMAL, family=wx.MODERN, weight=wx.BOLD)
         self.SetFont(font)
@@ -421,6 +428,11 @@ class CompassControl(wx.PyPanel):
         :param event: event arguments
         '''
         self.Refresh()
+
+    def SetExpectedAngleVisibility(self, visible):
+        self._expectedAngleVis = visible
+        self.Refresh()
+
 
     def SetExpectedAngle(self, angle, refresh=True):
         newAngle = radians(angle % 360)
@@ -540,6 +552,9 @@ class CompassControl(wx.PyPanel):
         return (tickX1, tickY1)
 
     def DrawExpectedDirection(self, dc):
+        if not self._expectedAngleVis:
+            return
+
         dc.SetPen(wx.TRANSPARENT_PEN)
         dc.SetBrush(wx.Brush('#3FE044', wx.SOLID))
 
@@ -552,6 +567,9 @@ class CompassControl(wx.PyPanel):
                            h=2.0 * self._radius,
                            start=degrees(rAngle1),
                            end=degrees(rAngle2))
+
+        dc.SetPen(wx.BLACK_PEN)
+        self.DrawTick(dc, degrees(self._expectedAngle), self._tickSize)
 
     def DrawCurrentDirection(self, dc):
         angle = self._currentAngle - self._angleOffset

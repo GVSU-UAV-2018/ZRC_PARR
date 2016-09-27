@@ -4,7 +4,7 @@ import threading
 import serial
 from zlib import crc32
 from protocolwrapper import ProtocolWrapper, ProtocolStatus
-from construct import Struct, SLInt32, ULInt32, ULInt16, Flag, Embed, LFloat32, Container
+from construct import Struct, SLInt32, ULInt32, ULInt16, Flag, Embed, LFloat32, Container, Padding
 import time
 from pubsub import pub
 
@@ -28,7 +28,6 @@ class SerialReadThread(threading.Thread):
     def run(self):
         self.alive.set()
         while self.alive.isSet():
-            # Should be non-blocking read call
             byte = self.serial.read(size=1)
 
             if byte == '':
@@ -269,6 +268,7 @@ msg_header = Struct('msg_header',
 msg_scanning = Struct('msg_scanning',
                       Embed(msg_header),
                       Flag('scanning'),
+                      Padding(7),
                       Embed(msg_crc)
 )
 

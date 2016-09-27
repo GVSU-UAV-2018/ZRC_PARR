@@ -419,7 +419,7 @@ class ScanTabPanel(wx.Panel):
         root_sizer.Add(item=left_sizer, proportion=1, flag=wx.EXPAND | wx.ALL | wx.CENTER)
 
         self.scan_display = ScanRotationPanel(parent=self, scan_data=self.scan_dict, style=wx.SUNKEN_BORDER)
-        middle_sizer = wx.BoxSizer(wx.VERTICAL)2
+        middle_sizer = wx.BoxSizer(wx.VERTICAL)
         middle_sizer.Add(self.scan_display, proportion=1, flag=wx.EXPAND | wx.ALL | wx.CENTER)
 
         root_sizer.Add(item=middle_sizer, proportion=1, flag=wx.ALL | wx.EXPAND)
