@@ -7,15 +7,14 @@ from gnuradio.fft import window
 from gnuradio.filter import firdes
 from optparse import OptionParser
 import collar_detect
-import fcdproplus
 import Queue
-import Serial_CRC
-import threading
-import smbus
-import time
+import smbu
+import osmosdr
+import numpy
 import math
 import Adafruit_BMP.BMP085 as BMP085
-from zrc_base import SerialPort, msg_id_to_type
+from zrc_core import SerialInterface, MessageString, MessageType
+import threading
 from pubsub import pub
 
 import logging
@@ -34,53 +33,112 @@ class UAVRadioFinder(gr.top_block):
         sample_rate - the sample rate of 75the SDR
         altimeter - sensor device used to get current altitude of UAV
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, serial, **kwargs):
         gr.top_block.__init__(self, "UAV Radio Finder")
         # kwargs.get(<named variable name>, <default value if None>)
-        self._gain = kwargs.get('gain', 20)
-        self._scan_frequency = kwargs.get('scan_frequency', 150.742800)
-        self._snr_threshold = kwargs.get('snr_threshold', 5.0)
+        self._gain = kwargs.get('gain', 10)
+        self._scan_frequency = kwargs.get('scan_frequency', 150.742e6)
+        self._snr_threshold = kwargs.get('snr_threshold', 6.0)
 
-        self.serial_port = kwargs.get('serial_port', None)
-
-        self.scanning = False
-        self.freq_offset = kwargs.get('freq_offset', 3000)
+        self._prev_scanning = False
+        self._scanning = False
+        self._freq_offset = kwargs.get('freq_offset', 3000)
         self._attitude = {'heading': 0.0, 'altitude': 0.0}
 
-        self.altimeter = kwargs.get('altimeter', BarometerSensor())
-        self.compass = kwargs.get('compass', Compass())
-        
+        self.altimeter = BarometerSensor()
+        self.compass = Compass()
+
+        self._attitude_thread = threading.Thread(target=self._send_attitude)
+        self._attitude_thread.daemon = True
+
+        pub.subscribe(self._on_detection, 'detection')
+        self.serial = serial
+        if self.serial is not None:
+            self.serial.subscribe(MessageString[MessageType.scanning], self._on_scanning)
+            self.serial.subscribe(MessageString[MessageType.scan_settings], self._on_scan_settings)
+
+        self._direction_finder = DirectionFinder()
         self._create_gr_blocks(kwargs.get('sample_rate', 192000))
         self._connect_gr_blocks()
-        # TODO Subscribe to event here which gets published from Burst_detection and store bursts
-        pub.subscribe(self._handle_detection, 'detection')
 
     def _create_gr_blocks(self, sample_rate):
-        self.fft_vxx_0 = fft.fft_vfc(512, True, (window.rectangular(512)), 1)
-        self.fcdproplus_fcdproplus_0 = fcdproplus.fcdproplus("", 1)
-        self.fcdproplus_fcdproplus_0.set_lna(1)
-        self.fcdproplus_fcdproplus_0.set_mixer_gain(1)
-        self.fcdproplus_fcdproplus_0.set_if_gain(self.gain)
-        self.fcdproplus_fcdproplus_0.set_freq_corr(0)
-        self.fcdproplus_fcdproplus_0.set_freq(self.scan_frequency - self.freq_offset)
+        self.rtlsdr_source_0 = osmosdr.source(args="numchan=" + str(1) + " " + "")
+        self.rtlsdr_source_0.set_sample_rate(sample_rate)
+        self.rtlsdr_source_0.set_center_freq(self._scan_frequency - self._freq_offset, 0)
+        self.rtlsdr_source_0.set_freq_corr(0, 0)
+        self.rtlsdr_source_0.set_dc_offset_mode(0, 0)
+        self.rtlsdr_source_0.set_iq_balance_mode(0, 0)
+        self.rtlsdr_source_0.set_gain_mode(False, 0)
+        self.rtlsdr_source_0.set_gain(self._gain, 0)
+        self.rtlsdr_source_0.set_if_gain(20, 0)
+        self.rtlsdr_source_0.set_bb_gain(20, 0)
+        self.rtlsdr_source_0.set_antenna("", 0)
+        self.rtlsdr_source_0.set_bandwidth(0, 0)
 
-        self.collar_detect_collar_detect_0 = collar_detect.collar_detect()
-        self.blocks_stream_to_vector_0 = blocks.stream_to_vector(gr.sizeof_float*1, 512)
+        self.fft_vxx_0 = fft.fft_vcc(512, True, (window.blackmanharris(512)), True, 1)
+        self.blocks_vector_to_stream_0 = blocks.vector_to_stream(gr.sizeof_gr_complex * 1, 512)
+        self.blocks_udp_sink_0 = blocks.udp_sink(gr.sizeof_gr_complex * 1, "192.168.1.21", 1234, 1472, True)
+        self.blocks_stream_to_vector_1 = blocks.stream_to_vector(gr.sizeof_float * 1, 512)
+        self.blocks_stream_to_vector_0 = blocks.stream_to_vector(gr.sizeof_gr_complex * 1, 512)
+        self.blocks_null_sink_0 = blocks.null_sink(gr.sizeof_float * 1)
         self.blocks_multiply_xx_0 = blocks.multiply_vcc(512)
         self.blocks_complex_to_real_0 = blocks.complex_to_real(1)
-        self.blocks_complex_to_mag_0 = blocks.complex_to_mag(512)
-        self.band_pass_filter_0 = filter.fir_filter_ccf(6, firdes.band_pass(
-        	100, sample_rate, 2.5e3, 3.5e3, 600, firdes.WIN_RECTANGULAR, 6.76))
+        self.band_pass_filter_0 = filter.fir_filter_ccf(4, firdes.band_pass(
+            1, self._scan_frequency, 2500, 3500, 600, firdes.WIN_HAMMING, 6.76))
+        #self.analog_pwr_squelch_xx_0 = analog.pwr_squelch_cc(-150, 1, 0, False)
+        self.collar_detect_collar_detect_0 = collar_detect.collar_detect()
 
     def _connect_gr_blocks(self):
-        self.connect((self.fcdproplus_fcdproplus_0, 0), (self.band_pass_filter_0, 0))
-        self.connect((self.band_pass_filter_0, 0), (self.blocks_complex_to_real_0, 0))
-        self.connect((self.blocks_complex_to_real_0, 0), (self.blocks_stream_to_vector_0, 0))
+        self.connect((self.blocks_vector_to_stream_0, 0), (self.blocks_complex_to_real_0, 0))
+        self.connect((self.blocks_complex_to_real_0, 0), (self.blocks_stream_to_vector_1, 0))
+        self.connect((self.band_pass_filter_0, 0), (self.blocks_udp_sink_0, 0))
+        self.connect((self.band_pass_filter_0, 0), (self.blocks_stream_to_vector_0, 0))
+        self.connect((self.blocks_stream_to_vector_1, 0), (self.collar_detect_collar_detect_0, 0))
+        self.connect((self.blocks_multiply_xx_0, 0), (self.blocks_vector_to_stream_0, 0))
         self.connect((self.blocks_stream_to_vector_0, 0), (self.fft_vxx_0, 0))
-        self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 1))
+        #self.connect((self.blocks_vector_to_stream_0, 0), (self.analog_pwr_squelch_xx_0, 0))
         self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 0))
-        self.connect((self.blocks_multiply_xx_0, 0), (self.blocks_complex_to_mag_0, 0))
-        self.connect((self.blocks_complex_to_mag_0, 0), (self.collar_detect_collar_detect_0, 0))
+        self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 1))
+        self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 2))
+        self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 3))
+        self.connect((self.rtlsdr_source_0, 0), (self.band_pass_filter_0, 0))
+
+    def _on_scanning(self, msg):
+        if msg is None:
+            return
+
+        self._prev_scanning = self._scanning
+        self._scanning = msg.scanning
+
+        # Detect falling edge of scanning which means a scan has finished
+        if self._prev_scanning is True and self._scanning is False:
+            result = self._direction_finder.FindDirection()
+            magnitude = result[0]
+            angle = result[1]
+            self.serial.send_detection(magnitude, angle)
+
+    def _on_scan_settings(self, msg):
+        if msg is None:
+            return
+
+        self.gain = msg.gain
+        self.scan_frequency = msg.scan_frequency
+        self.snr_threshold = msg.snr_threshold
+
+    def _on_detection(self, magnitude):
+        # Detect rising edge of scanning which means a scan has started
+        if self._prev_scanning is False and self._scan_frequency is True:
+            self._direction_finder.Reset()
+
+        # Accumulate any detections while scan is active
+        elif self._scanning is True:
+            self._direction_finder.AddDetection(magnitude)
+
+    def _send_attitude(self):
+        altitude = self.get_altitude()
+        heading = self.get_heading()
+        if self.serial is not None:
+            self.serial.send_attitude(altitude, heading)
 
     @property
     def gain(self):
@@ -89,7 +147,7 @@ class UAVRadioFinder(gr.top_block):
     @gain.setter
     def gain(self, val):
         self._gain = val
-        self.fcdproplus_fcdproplus_0.set_if_gain(self._gain)
+        self.rtlsdr_source_0.set_if_gain(self._gain)
 
     @property
     def scan_frequency(self):
@@ -98,7 +156,7 @@ class UAVRadioFinder(gr.top_block):
     @scan_frequency.setter
     def scan_frequency(self, val):
         self._scan_frequency = val
-        self.fcdproplus_fcdproplus_0.set_freq(self._scan_frequency - self.freq_offset)
+        self.rtlsdr_source_0.set_freq(self._scan_frequency - self._freq_offset)
 
     @property
     def snr_threshold(self):
@@ -107,31 +165,12 @@ class UAVRadioFinder(gr.top_block):
     @snr_threshold.setter
     def snr_threshold(self, val):
         self._snr_threshold = val
-
-    def _handle_detection(self, arg1):
-        print("Handle Detection")
-        print arg1
-        pass
-
-    def is_scanning(self):
-        return self.scanning
-
-    def scan(self):
-        try:
-            msg = self.serial_port.in_q.get(block=True, timeout=0.1)
-            if msg is not None:
-                self._handle_msg(msg)
-        except Queue.Empty as e:
-            pass
-        #TODO Put this on a timer sometime after testing
-        # Send UAV attitude to the ground station
-        self.serial_port.send_attitude(
-            alt=self.get_altitude(),
-            heading=self.get_heading())
+        self.collar_detect_collar_detect_0.snr_threshold = self._snr_threshold
 
     def start(self, max_noutput_items=10000000):
         super(UAVRadioFinder, self).start(max_noutput_items)
-        self.serial_port.Start()
+        self.serial.start()
+        self._attitude_thread.start()
 
     def get_heading(self):
         if self.compass is None:
@@ -145,20 +184,41 @@ class UAVRadioFinder(gr.top_block):
 
         return self.altimeter.get_altitude()
 
-    def _handle_msg(self, msg):
-        if msg_id_to_type[msg.msg_id] == 'scanning':
-            if msg.scanning == 1 and self.scanning is False:
-                self.scanning = True
-            elif msg.scanning == 0 and self.scanning is True:
-                self.scanning = False
-
-        if msg_id_to_type[msg.msg_id] == 'scan_settings':
-            self.gain = msg.gain
-            self.scan_frequency = msg.scan_frequency
-            self.snr_threshold = msg.snr_threshold
-
     def close(self):
-        self.serial_port.Dispose()
+        if self.serial is not None:
+            self.serial.Dispose()
+
+        self._attitude_thread.join(timeout=0.1)
+
+
+class DirectionFinder(object):
+    """
+        Accumulates detections and determines final magnitude
+        and direction of a scan
+    """
+    def __init__(self):
+        super(DirectionFinder, self).__init__()
+        self._num_detections = 0
+        self._sum = numpy.array[0.0, 0.0]
+
+    def Reset(self):
+        self._num_detections = 0
+        self._sum = numpy.array[0.0, 0.0]
+
+    def AddDetection(self, magnitude, heading):
+        self._sum += numpy.array(magnitude * math.cos(heading), magnitude * math.sin(heading))
+        self._num_detections += 1
+
+    def FindDirection(self):
+        average = self._sum / self._num_detections
+        found_magnitude = numpy.linalg.norm(average)
+        found_angle = numpy.arctan2(average[1], average[0])
+
+        if found_angle < 0:
+            found_angle += 2 * math.pi
+
+        found_angle = math.degrees(found_angle)
+        return found_magnitude, found_angle
 
 
 class Compass(object):
@@ -268,20 +328,13 @@ class BarometerSensor(object):
 
 
 def main_loop():
-    input_q = Queue.Queue()
-    output_q = Queue.Queue()
-    serial_port = SerialPort(in_q=input_q, out_q=output_q, port='/dev/ttyAMA0')
+    config = {'port': '/dev/ttyAMA0',
+              'baud': 57600,
+              'timeout': 0.1}
+    serial = SerialInterface(**config)
 
-    rdf = UAVRadioFinder(serial_port=serial_port, scan_frequency=150.742800)
+    rdf = UAVRadioFinder(serial=serial)
     rdf.start()
-
-    while True:
-        try:
-            rdf.scan()
-        except Exception as e:
-            print e.message
-            rdf.close()
-            break
 
 if __name__ == '__main__':
     if gr.enable_realtime_scheduling() != gr.RT_OK:

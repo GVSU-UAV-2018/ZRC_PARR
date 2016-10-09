@@ -15,7 +15,7 @@ def main():
         port.start()
         var = 'n'
         while var is not 'y':
-            port.send_attitude(alt=random.uniform(20.0, 100.0), heading=random.uniform(0.0, 360.0))
+            port.send_attitude(altitude=random.uniform(20.0, 100.0), heading=random.uniform(0.0, 360.0))
             print 'sent attitude'
             time.sleep(1)
     except Exception as e:

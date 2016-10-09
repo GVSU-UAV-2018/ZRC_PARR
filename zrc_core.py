@@ -171,11 +171,11 @@ class SerialPort(object):
         packet = self.pwrap.wrap(fin_msg)
         self._put_message(packet)
 
-    def send_attitude(self, alt, heading):
+    def send_attitude(self, altitude, heading):
         msg_str = msg_attitude.build(
             Container(
                 msg_id=2,
-                altitude=alt,
+                altitude=altitude,
                 heading=heading,
                 crc=0
             )
@@ -185,11 +185,11 @@ class SerialPort(object):
         packet = self.pwrap.wrap(fin_msg)
         self._put_message(packet)
 
-    def send_detection(self, snr, heading):
+    def send_detection(self, magnitude, heading):
         msg_str = msg_detection.build(
             Container(
                 msg_id=3,
-                snr=snr,
+                magnitude=magnitude,
                 heading=heading,
                 crc=0
             )
@@ -289,7 +289,7 @@ msg_attitude = Struct('msg_attitude',
 
 msg_detection = Struct('msg_detection',
                        Embed(msg_header),
-                       LFloat32('snr'),
+                       LFloat32('magnitude'),
                        LFloat32('heading'),
                        Embed(msg_crc)
 )
