@@ -46,8 +46,8 @@ class UAVRadioFinder(gr.top_block):
         self._freq_offset = kwargs.get('freq_offset', 3000)
         self._attitude = {'heading': 0.0, 'altitude': 0.0}
 
-        #self.altimeter = BarometerSensor()
-        #self.compass = Compass()
+        self.altimeter = BarometerSensor()
+        self.compass = Compass()
         self._send_attitude_flag = threading.Event()
         self._send_attitude_flag.set()
         self._attitude_thread = threading.Thread(target=self._send_attitude)
@@ -140,10 +140,10 @@ class UAVRadioFinder(gr.top_block):
             self._direction_finder.AddDetection(magnitude)
 
     def _send_attitude(self):
-        #altitude = self.get_altitude()
-        #heading = self.get_heading()
-        altitude = 101.0
-        heading = 46.0
+        altitude = self.get_altitude()
+        heading = self.get_heading()
+        # altitude = 101.0
+        # heading = 46.0
         if self.serial is not None:
             self.serial.send_attitude(altitude, heading)
             time.sleep(0.1)
