@@ -88,7 +88,7 @@ class UAVRadioFinder(gr.top_block):
         self.band_pass_filter_0 = filter.fir_filter_ccf(4, firdes.band_pass(
             1, self._scan_frequency, 2500, 3500, 600, firdes.WIN_HAMMING, 6.76))
         #self.analog_pwr_squelch_xx_0 = analog.pwr_squelch_cc(-150, 1, 0, False)
-        self.collar_detect_collar_detect_0 = collar_detect.collar_detect()
+        self.collar_detect_collar_detect_0 = collar_detect()
 
     def _connect_gr_blocks(self):
         self.connect((self.blocks_vector_to_stream_0, 0), (self.blocks_complex_to_real_0, 0))
