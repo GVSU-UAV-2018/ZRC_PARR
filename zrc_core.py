@@ -4,7 +4,7 @@ import threading
 import serial
 from zlib import crc32
 from protocolwrapper import ProtocolWrapper, ProtocolStatus
-from construct import Struct, SLInt32, ULInt32, ULInt16, Flag, Embed, LFloat32, Container
+from construct import Struct, SLInt32, ULInt32, ULInt16, Flag, Embed, LFloat32, Container, Padding
 import time
 from pubsub import pub
 
@@ -28,7 +28,6 @@ class SerialReadThread(threading.Thread):
     def run(self):
         self.alive.set()
         while self.alive.isSet():
-            # Should be non-blocking read call
             byte = self.serial.read(size=1)
 
             if byte == '':
@@ -172,11 +171,11 @@ class SerialPort(object):
         packet = self.pwrap.wrap(fin_msg)
         self._put_message(packet)
 
-    def send_attitude(self, alt, heading):
+    def send_attitude(self, altitude, heading):
         msg_str = msg_attitude.build(
             Container(
                 msg_id=2,
-                altitude=alt,
+                altitude=altitude,
                 heading=heading,
                 crc=0
             )
@@ -186,11 +185,11 @@ class SerialPort(object):
         packet = self.pwrap.wrap(fin_msg)
         self._put_message(packet)
 
-    def send_detection(self, snr, heading):
+    def send_detection(self, magnitude, heading):
         msg_str = msg_detection.build(
             Container(
                 msg_id=3,
-                snr=snr,
+                magnitude=magnitude,
                 heading=heading,
                 crc=0
             )
@@ -200,9 +199,11 @@ class SerialPort(object):
         packet = self.pwrap.wrap(fin_msg)
         self._put_message(packet)
 
-    def close(self):
-        self.receive_thread.join(timeout=0.2)
-        self.send_thread.join(timeout=0.2)
+    def Dispose(self):
+        if self.receive_thread.is_alive():
+            self.receive_thread.join(timeout=0.2)
+        if self.send_thread.is_alive():
+            self.send_thread.join(timeout=0.2)
         self.serial.close()
 
 
@@ -234,19 +235,24 @@ class SerialInterface(SerialPort):
         super(SerialInterface, self).start()
         self.inbound_polling.start()
 
-    def close(self):
+    def Dispose(self):
         self._poll.clear()
-        self.inbound_polling.join(timeout=0.2)
-        super(SerialInterface, self).close()
+        if self.inbound_polling.is_alive():
+            self.inbound_polling.join(timeout=0.2)
+        super(SerialInterface, self).Dispose()
 
     def _receive(self):
         while self._poll.is_set():
             try:
+                if self.in_q.empty():
+                    time.sleep(0.05)
+                    continue
+
                 msg = self.in_q.get(block=False)
                 if msg is None:
                     time.sleep(0.05)
                 else:
-                    pub.sendMessage(MessageString[msg.msg_id], msg)
+                    pub.sendMessage(MessageString[msg.msg_id], msg=msg)
                     self.in_q.task_done()
 
             except Queue.Empty:
@@ -266,6 +272,7 @@ msg_header = Struct('msg_header',
 msg_scanning = Struct('msg_scanning',
                       Embed(msg_header),
                       Flag('scanning'),
+                      Padding(7),
                       Embed(msg_crc)
 )
 
@@ -286,7 +293,7 @@ msg_attitude = Struct('msg_attitude',
 
 msg_detection = Struct('msg_detection',
                        Embed(msg_header),
-                       LFloat32('snr'),
+                       LFloat32('magnitude'),
                        LFloat32('heading'),
                        Embed(msg_crc)
 )
