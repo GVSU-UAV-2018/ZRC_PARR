@@ -6,9 +6,10 @@ from gnuradio.eng_option import eng_option
 from gnuradio.fft import window
 from gnuradio.filter import firdes
 from optparse import OptionParser
-import collar_detect
+from gr_detect.python import collar_detect
 import Queue
-import smbu
+import time
+import smbus
 import osmosdr
 import numpy
 import math
@@ -45,9 +46,10 @@ class UAVRadioFinder(gr.top_block):
         self._freq_offset = kwargs.get('freq_offset', 3000)
         self._attitude = {'heading': 0.0, 'altitude': 0.0}
 
-        self.altimeter = BarometerSensor()
-        self.compass = Compass()
-
+        #self.altimeter = BarometerSensor()
+        #self.compass = Compass()
+        self._send_attitude_flag = threading.Event()
+        self._send_attitude_flag.set()
         self._attitude_thread = threading.Thread(target=self._send_attitude)
         self._attitude_thread.daemon = True
 
@@ -135,10 +137,13 @@ class UAVRadioFinder(gr.top_block):
             self._direction_finder.AddDetection(magnitude)
 
     def _send_attitude(self):
-        altitude = self.get_altitude()
-        heading = self.get_heading()
+        #altitude = self.get_altitude()
+        #heading = self.get_heading()
+        altitude = 101.0
+        heading = 46.0
         if self.serial is not None:
             self.serial.send_attitude(altitude, heading)
+            time.sleep(0.1)
 
     @property
     def gain(self):
@@ -185,6 +190,7 @@ class UAVRadioFinder(gr.top_block):
         return self.altimeter.get_altitude()
 
     def close(self):
+        self._send_attitude_flag.clear()
         if self.serial is not None:
             self.serial.Dispose()
 
@@ -199,11 +205,11 @@ class DirectionFinder(object):
     def __init__(self):
         super(DirectionFinder, self).__init__()
         self._num_detections = 0
-        self._sum = numpy.array[0.0, 0.0]
+        self._sum = numpy.array([0.0, 0.0])
 
     def Reset(self):
         self._num_detections = 0
-        self._sum = numpy.array[0.0, 0.0]
+        self._sum = numpy.array([0.0, 0.0])
 
     def AddDetection(self, magnitude, heading):
         self._sum += numpy.array(magnitude * math.cos(heading), magnitude * math.sin(heading))
@@ -331,7 +337,7 @@ def main_loop():
     config = {'port': '/dev/ttyAMA0',
               'baud': 57600,
               'timeout': 0.1}
-    serial = SerialInterface(**config)
+    serial = SerialInterface(config)
 
     rdf = UAVRadioFinder(serial=serial)
     rdf.start()

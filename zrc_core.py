@@ -244,6 +244,10 @@ class SerialInterface(SerialPort):
     def _receive(self):
         while self._poll.is_set():
             try:
+                if self.in_q.empty():
+                    time.sleep(0.05)
+                    continue
+
                 msg = self.in_q.get(block=False)
                 if msg is None:
                     time.sleep(0.05)

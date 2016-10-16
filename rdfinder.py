@@ -26,9 +26,9 @@ class UAVRadioFinder(object):
         self._serial.subscribe(MessageString[MessageType.attitude], self.OnAttitudeReceived)
 
     def OnAttitudeReceived(self, msg):
-        #self._heading = msg.heading
-        self._heading = 180
+        self._heading = msg.heading
         self._altitude = msg.altitude
+        print msg
 
     def UpdateScanSettings(self, gain=None, freq=None, snr=None):
         """
@@ -71,7 +71,7 @@ class UAVRadioFinder(object):
 
     def StartScan(self):
         self._scanning = True
-
+#
     def StopScan(self):
         self._scanning = False
 
