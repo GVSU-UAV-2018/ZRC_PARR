@@ -18,6 +18,7 @@ class MainWindowController(object):
         self.mainWinView.Bind(event=wx.EVT_CLOSE,
                               handler=self.OnClose)
 
+        self.settingsView = self.mainWinView.settingsDisplayPanel
         self.statusView = self.mainWinView.statusDisplayPanel
         self.compassView = self.mainWinView.compassPanel
         self.scanControlView = self.mainWinView.scanStartPanel
@@ -143,6 +144,7 @@ class MainWindowController(object):
             wx.CallAfter(self.compassView.SetExpectedAngle, expAngle, True)
 
     def UpdateScanSettings(self, params):
+        self.settingsView.update(params['freq'] / 1e6, params['gain'], params['snr'])
         self.uavSeeker.scanFrequency = params['freq']
         self.uavSeeker.gain = params['gain']
         self.uavSeeker.snrThreshold = params['snr']

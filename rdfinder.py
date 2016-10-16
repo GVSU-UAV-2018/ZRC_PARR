@@ -24,10 +24,14 @@ class UAVRadioFinder(object):
         self._scanning = False
 
         self._serial.subscribe(MessageString[MessageType.attitude], self.OnAttitudeReceived)
+        self._serial.subscribe(MessageString[MessageType.detection], self.OnDetectionReceived)
 
     def OnAttitudeReceived(self, msg):
         self._heading = msg.heading
         self._altitude = msg.altitude
+        print msg
+
+    def OnDetectionReceived(self, msg):
         print msg
 
     def UpdateScanSettings(self, gain=None, freq=None, snr=None):

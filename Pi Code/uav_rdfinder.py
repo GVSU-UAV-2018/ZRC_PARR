@@ -115,6 +115,9 @@ class UAVRadioFinder(gr.top_block):
         # Detect falling edge of scanning which means a scan has finished
         if self._prev_scanning is True and self._scanning is False:
             result = self._direction_finder.FindDirection()
+            if result is None:
+                return
+
             magnitude = result[0]
             angle = result[1]
             self.serial.send_detection(magnitude, angle)
@@ -216,6 +219,8 @@ class DirectionFinder(object):
         self._num_detections += 1
 
     def FindDirection(self):
+        if self._num_detections <= 0:
+            return
         average = self._sum / self._num_detections
         found_magnitude = numpy.linalg.norm(average)
         found_angle = numpy.arctan2(average[1], average[0])
