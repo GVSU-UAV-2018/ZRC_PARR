@@ -347,6 +347,9 @@ def main_loop():
     rdf = UAVRadioFinder(serial=serial)
     rdf.start()
 
+    while True:
+        time.sleep(0.1)
+
 if __name__ == '__main__':
     if gr.enable_realtime_scheduling() != gr.RT_OK:
         print 'Error: failed to enable real time scheduling'
