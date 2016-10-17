@@ -6,7 +6,7 @@ from gnuradio.eng_option import eng_option
 from gnuradio.fft import window
 from gnuradio.filter import firdes
 from optparse import OptionParser
-from gr_detect.python import collar_detect
+import collar_detect
 import Queue
 import time
 import smbus
@@ -39,7 +39,7 @@ class UAVRadioFinder(gr.top_block):
         # kwargs.get(<named variable name>, <default value if None>)
         self._gain = kwargs.get('gain', 10)
         self._scan_frequency = kwargs.get('scan_frequency', 150.742e6)
-        self._snr_threshold = kwargs.get('snr_threshold', 6.0)
+        self._snr_threshold = kwargs.get('snr_threshold', 1.0)
 
         self._prev_scanning = False
         self._scanning = False
@@ -116,10 +116,13 @@ class UAVRadioFinder(gr.top_block):
         if self._prev_scanning is True and self._scanning is False:
             result = self._direction_finder.FindDirection()
             if result is None:
+                print 'No detections, not sending detection packet'
                 return
 
             magnitude = result[0]
             angle = result[1]
+            print 'Angle: ' + str(angle)
+            print 'Magnitude: ' + str(magnitude)
             self.serial.send_detection(magnitude, angle)
 
     def _on_scan_settings(self, msg):
@@ -140,13 +143,12 @@ class UAVRadioFinder(gr.top_block):
             self._direction_finder.AddDetection(magnitude)
 
     def _send_attitude(self):
-        altitude = self.get_altitude()
-        heading = self.get_heading()
-        # altitude = 101.0
-        # heading = 46.0
-        if self.serial is not None:
-            self.serial.send_attitude(altitude, heading)
-            time.sleep(0.1)
+        while self._send_attitude_flag.isSet():
+            altitude = self.get_altitude()
+            heading = self.get_heading()
+            if self.serial is not None:
+                self.serial.send_attitude(altitude, heading)
+                time.sleep(0.1)
 
     @property
     def gain(self):
@@ -235,8 +237,8 @@ class DirectionFinder(object):
 class Compass(object):
     def __init__(self, *args, **kwargs):
         self.sensor = HMC5883L(args, kwargs)
-        self.x_offset = 709
-        self.y_offset = -180
+        self.x_offset = 956
+        self.y_offset = -680
         self.z_offset = 0
         self.scale = 0.92
 
@@ -349,7 +351,7 @@ def main_loop():
     rdf.start()
 
     while True:
-        time.sleep(0.1)
+        time.sleep(1)
 
 if __name__ == '__main__':
     if gr.enable_realtime_scheduling() != gr.RT_OK:
