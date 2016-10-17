@@ -79,7 +79,7 @@ class collar_detect(gr.sync_block):
 
         if noise_mean > self.snr_threshold * var_avg:
             detected_pulse = noise_mean / var_avg
-            pub.sendMessage('detection', arg1=detected_pulse)
+            pub.sendMessage('detection', magnitude=detected_pulse)
             # print numpy.max(noise_norm)
 
         return len(input_items[0])
