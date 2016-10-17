@@ -249,6 +249,7 @@ class Compass(object):
     def get_heading(self):
         x = self.sensor.get_x()
         y = self.sensor.get_y()
+        z = self.sensor.get_z()
         # TODO Revisit this and figure out what is going on here
         x = (x + self.x_offset) * self.scale
         y = (y + self.y_offset) * self.scale
@@ -302,7 +303,7 @@ class HMC5883L(object):
         high_byte = self.bus.read_byte_data(self.address, location)
         low_byte = self.bus.read_byte_data(self.address, location + 1)
         # Construct the word in big endian format
-        word = (high_byte >> 8) + low_byte
+        word = (high_byte << 8) + low_byte
         return word
 
     def get_x(self):
