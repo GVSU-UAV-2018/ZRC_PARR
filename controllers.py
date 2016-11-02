@@ -22,6 +22,7 @@ class MainWindowController(object):
         self.statusView = self.mainWinView.statusDisplayPanel
         self.compassView = self.mainWinView.compassPanel
         self.scanControlView = self.mainWinView.scanStartPanel
+        self.scanResultsView = self.mainWinView.scanResultsPanel
 
         self.currentCountdown = 5.0
         self.totalCountdown = 5
@@ -55,6 +56,9 @@ class MainWindowController(object):
                                      func=self._OnScanTimerTick,
                                      interval=self.SCAN_TIMER_INTERVAL)
 
+        if self.serial:
+            self.serial.subscribe(MessageString[MessageType.detection], self._OnDetectionReceived)
+
     def Initialize(self, serial=None):
         """Use to try to connect/reconnect to serial port later"""
         try:
@@ -62,6 +66,11 @@ class MainWindowController(object):
             self.uavSeeker = UAVRadioFinder(self.serial)
         except SerialException as ex:
             raise
+
+    def _OnDetectionReceived(self, msg):
+        magnitude = msg.magnitude
+        heading = msg.heading
+        self.scanResultsView.SetResults(heading, magnitude, self.uavSeeker.scanFrequency)
 
     def _OnScanStart(self, params):
         """

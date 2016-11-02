@@ -318,21 +318,28 @@ class ScanResultsPanel(wx.Panel):
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.SetSizer(sizer)
 
-        self.directionDisplay = DisplayControl(parent=self, label='Direction', unit=DEGREE_SIGN)
-        self.directionDisplay.SetValue(140.0)
-        self.powerDisplay = DisplayControl(parent=self, label='Power', unit=' dB')
-        self.powerDisplay.SetValue(13.0)
+        self.headingDisplay = DisplayControl(parent=self, label='Heading', unit=DEGREE_SIGN)
+        self.headingDisplay.SetValue(140.0)
+        self.magnitudeDisplay = DisplayControl(parent=self, label='Magnitude', unit=' dB')
+        self.magnitudeDisplay.SetValue(13.0)
         self.freqDisplay = DisplayControl(parent=self, label='Frequency', unit=' MHz')
         self.freqDisplay.SetValue(153.405)
 
         leftSizer = wx.BoxSizer(wx.VERTICAL)
-        leftSizer.Add(item=self.directionDisplay, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
-        leftSizer.Add(item=self.powerDisplay, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
+        leftSizer.Add(item=self.headingDisplay, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
+        leftSizer.Add(item=self.magnitudeDisplay, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
         leftSizer.Add(item=self.freqDisplay, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
 
         sizer.Add(item=leftSizer, proportion=1, flag=wx.ALL | wx.EXPAND, border=5)
         sizer.AddSpacer(item=(0, 0), proportion=1, flag=wx.ALL | wx.EXPAND, border=5)
 
+    def SetResults(self, heading, magnitude, frequency):
+        heading = '{0:.2f}'.format(heading)
+        magnitude = '{0:.2f}'.format(magnitude)
+        frequency = '{0:.3f}'.format(frequency / 1e6)
+        self.headingDisplay.SetValue(heading)
+        self.magnitudeDisplay.SetValue(magnitude)
+        self.freqDisplay.SetValue(frequency)
 
 class ScanStartPanel(wx.Panel):
     def __init__(self, *args, **kwargs):
