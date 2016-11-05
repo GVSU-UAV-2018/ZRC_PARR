@@ -25,7 +25,7 @@ from pubsub import pub
 
 i = 0
 var_avg = 0.0
-vag_avg_temp = []
+var_avg_temp = []
 prev_time = 0.0
 collar_offset = 3000
 sample_freq_decim = 16000.0
@@ -43,7 +43,7 @@ class cw_pulse_detect(gr.sync_block):
         self.snr_threshold = snr or 6.0
 
     def work(self, input_items, output_items):
-        global var_arg
+        global var_avg
         global i
         global var_avg_temp
         in0 = input_items[0]
@@ -63,6 +63,7 @@ class cw_pulse_detect(gr.sync_block):
 
 	if noise_mean > self.snr_threshold * var_avg:
             detected_pulse = noise_mean / var_avg
+	    print 'detection: ' + str(detected_pulse)
             pub.sendMessage('detection', magnitude=detected_pulse)
 
 	return len(input_items[0])
