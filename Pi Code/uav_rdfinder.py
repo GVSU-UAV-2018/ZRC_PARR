@@ -6,9 +6,9 @@ from gnuradio.eng_option import eng_option
 from gnuradio.fft import window
 from gnuradio.filter import firdes
 from optparse import OptionParser
-import collar_detect
 import Queue
 import time
+import autoSNR
 import smbus
 import osmosdr
 import numpy
@@ -88,14 +88,14 @@ class UAVRadioFinder(gr.top_block):
         self.band_pass_filter_0 = filter.fir_filter_ccf(4, firdes.band_pass(
             1, self._scan_frequency, 2500, 3500, 600, firdes.WIN_HAMMING, 6.76))
         #self.analog_pwr_squelch_xx_0 = analog.pwr_squelch_cc(-150, 1, 0, False)
-        self.collar_detect_collar_detect_0 = collar_detect()
+        self.autoSNR_cw_pulse_detect = autoSNR.cw_pulse_detect(snr=6.0, floor_samples=310)
 
     def _connect_gr_blocks(self):
         self.connect((self.blocks_vector_to_stream_0, 0), (self.blocks_complex_to_real_0, 0))
         self.connect((self.blocks_complex_to_real_0, 0), (self.blocks_stream_to_vector_1, 0))
         self.connect((self.band_pass_filter_0, 0), (self.blocks_udp_sink_0, 0))
         self.connect((self.band_pass_filter_0, 0), (self.blocks_stream_to_vector_0, 0))
-        self.connect((self.blocks_stream_to_vector_1, 0), (self.collar_detect_collar_detect_0, 0))
+        self.connect((self.blocks_stream_to_vector_1, 0), (self.autoSNR_cw_pulse_detect, 0))
         self.connect((self.blocks_multiply_xx_0, 0), (self.blocks_vector_to_stream_0, 0))
         self.connect((self.blocks_stream_to_vector_0, 0), (self.fft_vxx_0, 0))
         #self.connect((self.blocks_vector_to_stream_0, 0), (self.analog_pwr_squelch_xx_0, 0))
@@ -175,7 +175,7 @@ class UAVRadioFinder(gr.top_block):
     @snr_threshold.setter
     def snr_threshold(self, val):
         self._snr_threshold = val
-        self.collar_detect_collar_detect_0.snr_threshold = self._snr_threshold
+        self.autoSNR_cw_pulse_detect.snr_threshold = self._snr_threshold
 
     def start(self, max_noutput_items=10000000):
         super(UAVRadioFinder, self).start(max_noutput_items)

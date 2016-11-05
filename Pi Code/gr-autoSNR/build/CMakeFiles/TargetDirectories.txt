@@ -1,0 +1,4 @@
+/home/pi/ZRC_RDF/Pi Code/gr-autoSNR/build/docs/doxygen/CMakeFiles/doxygen_target.dir
+/home/pi/ZRC_RDF/Pi Code/gr-autoSNR/build/apps/CMakeFiles/pygen_apps_9a6dd.dir
+/home/pi/ZRC_RDF/Pi Code/gr-autoSNR/build/python/CMakeFiles/pygen_python_18da8.dir
+/home/pi/ZRC_RDF/Pi Code/gr-autoSNR/build/CMakeFiles/uninstall.dir
