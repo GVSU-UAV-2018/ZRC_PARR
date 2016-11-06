@@ -23,6 +23,8 @@ class MainWindowController(object):
         self.compassView = self.mainWinView.compassPanel
         self.scanControlView = self.mainWinView.scanStartPanel
         self.scanResultsView = self.mainWinView.scanResultsPanel
+        self.scanResultsView.waterfall.start(True)
+
 
         self.currentCountdown = 5.0
         self.totalCountdown = 5

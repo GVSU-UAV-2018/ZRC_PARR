@@ -9,6 +9,16 @@ import wx.lib.newevent
 import sys, os
 import json
 from math import pi, cos, sin, radians, degrees, fabs
+from gnuradio import audio
+from gnuradio import blocks
+from gnuradio import eng_notation
+from gnuradio import gr
+from gnuradio import wxgui
+from gnuradio.eng_option import eng_option
+from gnuradio.fft import window
+from gnuradio.filter import firdes
+from gnuradio.wxgui import waterfallsink2
+from grc_gnuradio import wxgui as grc_wxgui
 import threading
 import time
 import logging
@@ -23,8 +33,6 @@ COLORS = {'normalText': '#000000',
           'panelTertiary': '#64B5F6',
           'windowBg': '#1A2C45'}
 
-
-
 DIRECTORY = os.path.dirname(__file__)
 
 ALPHA_ONLY = 1
@@ -37,6 +45,7 @@ if CURRENT_SYS == 'Windows':
     DEGREE_SIGN = chr(176)
 else:
     DEGREE_SIGN = u'\xb0'.encode(LOCAL_ENCODING)
+
 
 class MainWindow(wx.Frame):
     def __init__(self, *args, **kwargs):
@@ -204,7 +213,6 @@ class StatusDisplayPanel(wx.Panel):
             label='Countdown')
         self._countdownTimeDisp.SetValue(0)
 
-
         self._scanTimeDisp = DisplayControl(
             parent=self,
             label='Scanning Time')
@@ -268,7 +276,7 @@ class ScanSettingsPanel(wx.Panel):
         self.SetSizer(sizer)
 
         self.freqCtrl = NumTextCtrl(parent=self, label='Scan Frequency (MHz)')
-        self.freqCtrl.numCtrl.SetMaxSize((100,100))
+        self.freqCtrl.numCtrl.SetMaxSize((100, 100))
         self.gainCtrl = NumTextCtrl(parent=self, label='Receiver Gain (dB)')
         self.snrCtrl = NumTextCtrl(parent=self, label='SNR Threshold')
 
@@ -325,13 +333,20 @@ class ScanResultsPanel(wx.Panel):
         self.freqDisplay = DisplayControl(parent=self, label='Frequency', unit=' MHz')
         self.freqDisplay.SetValue(153.405)
 
+        self.waterfall = WaterfallPanel(parent=self)
+
+
         leftSizer = wx.BoxSizer(wx.VERTICAL)
         leftSizer.Add(item=self.headingDisplay, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
         leftSizer.Add(item=self.magnitudeDisplay, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
         leftSizer.Add(item=self.freqDisplay, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
 
+        rightSizer = wx.BoxSizer(wx.HORIZONTAL)
+        rightSizer.Add(item=self.waterfall.panel, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
+
         sizer.Add(item=leftSizer, proportion=1, flag=wx.ALL | wx.EXPAND, border=5)
-        sizer.AddSpacer(item=(0, 0), proportion=1, flag=wx.ALL | wx.EXPAND, border=5)
+        #sizer.AddSpacer(item=(0, 0), proportion=1, flag=wx.ALL | wx.EXPAND, border=5)
+        sizer.Add(item=rightSizer, proportion=1, flag=wx.ALL | wx.EXPAND, border=5)
 
     def SetResults(self, heading, magnitude, frequency):
         heading = '{0:.2f}'.format(heading)
@@ -340,6 +355,7 @@ class ScanResultsPanel(wx.Panel):
         self.headingDisplay.SetValue(heading)
         self.magnitudeDisplay.SetValue(magnitude)
         self.freqDisplay.SetValue(frequency)
+
 
 class ScanStartPanel(wx.Panel):
     def __init__(self, *args, **kwargs):
@@ -401,6 +417,46 @@ class ScanStartPanel(wx.Panel):
         pub.sendMessage('scanStart.Stop')
 
 
+class WaterfallPanel(gr.top_block):
+    def __init__(self, parent, *args, **kwargs):
+        super(WaterfallPanel, self).__init__(*args, **kwargs)
+        self.panel = wx.Panel(parent)
+        self.sample_rate = 24000
+        self.waterfallSink = waterfallsink2.waterfall_sink_c(
+            self.panel,
+            baseband_freq=0,
+            dynamic_range=100,
+            ref_level=0,
+            ref_scale=2.0,
+            sample_rate=self.sample_rate,
+            fft_size=512,
+            fft_rate=15,
+            average=False,
+            avg_alpha=None,
+            title='Waterfall Plot',
+        )
+
+        self.blocks_udp_source_0 = blocks.udp_source(gr.sizeof_gr_complex * 1, '0.0.0.0', 1234, 1472, True)
+        self.blocks_multiply_const_vxx_0 = blocks.multiply_const_vff((100,))
+        self.blocks_complex_to_real_0 = blocks.complex_to_real(1)
+        self.audio_sink_0 = audio.sink(self.sample_rate, '', True)
+
+        ##################################################
+        # Connections
+        ##################################################
+        self.connect((self.blocks_complex_to_real_0, 0), (self.blocks_multiply_const_vxx_0, 0))
+        self.connect((self.blocks_multiply_const_vxx_0, 0), (self.audio_sink_0, 0))
+        self.connect((self.blocks_udp_source_0, 0), (self.blocks_complex_to_real_0, 0))
+        self.connect((self.blocks_udp_source_0, 0), (self.waterfallSink, 0))
+
+    def get_samp_rate(self):
+        return self.samp_rate
+
+    def set_samp_rate(self, sample_rate):
+        self.sample_rate = sample_rate
+        self.waterfallSink.set_sample_rate(self.sample_rate)
+
+
 class CompassControl(wx.PyPanel):
     def __init__(self, parent, id=wx.ID_ANY, pos=wx.DefaultPosition,
                  size=wx.DefaultSize, style=wx.NO_BORDER, name='CompassControl'):
@@ -439,7 +495,6 @@ class CompassControl(wx.PyPanel):
     def SetExpectedAngleVisibility(self, visible):
         self._expectedAngleVis = visible
         self.Refresh()
-
 
     def SetExpectedAngle(self, angle, refresh=True):
         newAngle = radians(angle % 360)
@@ -540,7 +595,8 @@ class CompassControl(wx.PyPanel):
         dc.SetPen(wx.Pen(self.GetForegroundColour(), width=2, style=wx.SOLID))
         tickStep = 30
 
-        dc.SetFont(wx.Font(pointSize=self.GetFont().GetPointSize() // 2, style=wx.NORMAL, family=wx.SWISS, weight=wx.NORMAL))
+        dc.SetFont(
+            wx.Font(pointSize=self.GetFont().GetPointSize() // 2, style=wx.NORMAL, family=wx.SWISS, weight=wx.NORMAL))
         for tickAngle in range(0, 360, tickStep):
             tickX1, tickY1 = self.DrawTick(dc, tickAngle, self._tickSize)
 
@@ -683,6 +739,7 @@ class TextValidator(wx.PyValidator):
 
         return
 
+
 class NumTextCtrl(wx.BoxSizer):
     def __init__(self, parent, label, flag=FLOAT_ONLY):
         super(NumTextCtrl, self).__init__(wx.HORIZONTAL)
@@ -719,7 +776,6 @@ class NumTextCtrl(wx.BoxSizer):
             return None
 
         return val
-
 
 
 class DisplayControl(wx.Panel):
@@ -771,7 +827,7 @@ class DisplayControl(wx.Panel):
 
 
 if __name__ == '__main__':
-    #logging.basicConfig(format='%(asctime)s --%(levelname)s-- %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+    # logging.basicConfig(format='%(asctime)s --%(levelname)s-- %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
     try:
         try:
             with open('config.json') as data_file:
@@ -779,9 +835,8 @@ if __name__ == '__main__':
 
         except IOError:
             data = {'port': '/dev/ttyUSB0',
-                     'baud': 57600,
-                     'timeout': 0.1}
-
+                    'baud': 57600,
+                    'timeout': 0.1}
 
         app = wx.App()
 
