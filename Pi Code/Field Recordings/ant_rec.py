@@ -1,11 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 ##################################################
-# Gnuradio Python Flow Graph
+# GNU Radio Python Flow Graph
 # Title: Ant Rec
-# Generated: Fri Nov 20 17:39:23 2015
+# Generated: Sun Nov 27 20:59:05 2016
 ##################################################
 
-from PyQt4 import Qt
 from gnuradio import blocks
 from gnuradio import eng_notation
 from gnuradio import gr
@@ -14,33 +13,12 @@ from gnuradio.filter import firdes
 from optparse import OptionParser
 import fcdproplus
 import sys
+import time
 
-from distutils.version import StrictVersion
-class ant_rec(gr.top_block, Qt.QWidget):
+class ant_rec(gr.top_block):
 
     def __init__(self):
         gr.top_block.__init__(self, "Ant Rec")
-        Qt.QWidget.__init__(self)
-        self.setWindowTitle("Ant Rec")
-        try:
-             self.setWindowIcon(Qt.QIcon.fromTheme('gnuradio-grc'))
-        except:
-             pass
-        self.top_scroll_layout = Qt.QVBoxLayout()
-        self.setLayout(self.top_scroll_layout)
-        self.top_scroll = Qt.QScrollArea()
-        self.top_scroll.setFrameStyle(Qt.QFrame.NoFrame)
-        self.top_scroll_layout.addWidget(self.top_scroll)
-        self.top_scroll.setWidgetResizable(True)
-        self.top_widget = Qt.QWidget()
-        self.top_scroll.setWidget(self.top_widget)
-        self.top_layout = Qt.QVBoxLayout(self.top_widget)
-        self.top_grid_layout = Qt.QGridLayout()
-        self.top_layout.addLayout(self.top_grid_layout)
-
-        self.settings = Qt.QSettings("GNU Radio", "ant_rec")
-        self.restoreGeometry(self.settings.value("geometry").toByteArray())
-
 
         ##################################################
         # Variables
@@ -60,19 +38,15 @@ class ant_rec(gr.top_block, Qt.QWidget):
         self.fcdproplus_fcdproplus_0.set_freq_corr(22)
         self.fcdproplus_fcdproplus_0.set_freq(collar_freq - 3000)
           
-        self.blocks_file_sink_0 = blocks.file_sink(gr.sizeof_gr_complex*1, "b_3", False)
+        self.blocks_udp_sink_0 = blocks.udp_sink(gr.sizeof_gr_complex*1, "192.168.1.6", 1234, 1472, True)
+        self.blocks_file_sink_0 = blocks.file_sink(gr.sizeof_gr_complex*1, "funcube_replacement_no_antenna", False)
         self.blocks_file_sink_0.set_unbuffered(False)
 
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.fcdproplus_fcdproplus_0, 0), (self.blocks_file_sink_0, 0))
-
-
-    def closeEvent(self, event):
-        self.settings = Qt.QSettings("GNU Radio", "ant_rec")
-        self.settings.setValue("geometry", self.saveGeometry())
-        event.accept()
+        self.connect((self.fcdproplus_fcdproplus_0, 0), (self.blocks_file_sink_0, 0))    
+        self.connect((self.fcdproplus_fcdproplus_0, 0), (self.blocks_udp_sink_0, 0))    
 
     def get_samp_rate(self):
         return self.samp_rate
@@ -100,28 +74,20 @@ class ant_rec(gr.top_block, Qt.QWidget):
     def set_SNR(self, SNR):
         self.SNR = SNR
 
+
 if __name__ == '__main__':
-    import ctypes
-    import sys
-    if sys.platform.startswith('linux'):
-        try:
-            x11 = ctypes.cdll.LoadLibrary('libX11.so')
-            x11.XInitThreads()
-        except:
-            print "Warning: failed to XInitThreads()"
     parser = OptionParser(option_class=eng_option, usage="%prog: [options]")
     (options, args) = parser.parse_args()
     if gr.enable_realtime_scheduling() != gr.RT_OK:
         print "Error: failed to enable realtime scheduling."
-    if(StrictVersion(Qt.qVersion()) >= StrictVersion("4.5.0")):
-        Qt.QApplication.setGraphicsSystem(gr.prefs().get_string('qtgui','style','raster'))
-    qapp = Qt.QApplication(sys.argv)
+    from distutils.version import StrictVersion
     tb = ant_rec()
     tb.start()
-    tb.show()
+
+    time.sleep(30)
+
+
     def quitting():
         tb.stop()
         tb.wait()
-    qapp.connect(qapp, Qt.SIGNAL("aboutToQuit()"), quitting)
-    qapp.exec_()
-    tb = None #to clean up Qt widgets
+    tb = None  # to clean up Qt widgets
