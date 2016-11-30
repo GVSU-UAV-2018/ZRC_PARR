@@ -23,7 +23,7 @@ class MainWindowController(object):
         self.compassView = self.mainWinView.compassPanel
         self.scanControlView = self.mainWinView.scanStartPanel
         self.scanResultsView = self.mainWinView.scanResultsPanel
-        self.scanResultsView.waterfall.start(True)
+        self.scanResultsView.waterfall.start()
 
 
         self.currentCountdown = 5.0
@@ -164,10 +164,12 @@ class MainWindowController(object):
     def Show(self):
         self.mainWinView.Maximize()
         self.mainWinView.Show()
-        self.serial.start()
+        if self.serial is not None:
+            self.serial.start()
         self.updateTimer.start()
         self.scanTimer.start()
-        self.uavSeeker.Start()
+        if self.uavSeeker is not None:
+            self.uavSeeker.Start()
 
 
     def OnClose(self, evt):

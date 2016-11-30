@@ -348,6 +348,7 @@ class ScanResultsPanel(wx.Panel):
         #sizer.AddSpacer(item=(0, 0), proportion=1, flag=wx.ALL | wx.EXPAND, border=5)
         sizer.Add(item=rightSizer, proportion=1, flag=wx.ALL | wx.EXPAND, border=5)
 
+
     def SetResults(self, heading, magnitude, frequency):
         heading = '{0:.2f}'.format(heading)
         magnitude = '{0:.2f}'.format(magnitude)
@@ -421,7 +422,7 @@ class WaterfallPanel(gr.top_block):
     def __init__(self, parent, *args, **kwargs):
         super(WaterfallPanel, self).__init__(*args, **kwargs)
         self.panel = wx.Panel(parent)
-        self.sample_rate = 24000
+        self.sample_rate = 32000
         self.waterfallSink = waterfallsink2.waterfall_sink_c(
             self.panel,
             baseband_freq=0,
@@ -436,18 +437,27 @@ class WaterfallPanel(gr.top_block):
             title='Waterfall Plot',
         )
 
-        self.blocks_udp_source_0 = blocks.udp_source(gr.sizeof_gr_complex * 1, '0.0.0.0', 1234, 1472, True)
-        self.blocks_multiply_const_vxx_0 = blocks.multiply_const_vff((100,))
+        #self.blocks_udp_source_0 = blocks.udp_source(gr.sizeof_gr_complex * 1, '0.0.0.0', 1234, 1472, True)
+        self.blocks_file_source_0 = blocks.file_source(gr.sizeof_gr_complex*1, "/home/seth/ZRC_RDF/Pi Code/Field Recordings/funcube_replacement", True)
+        self.blocks_throttle_0 = blocks.throttle(gr.sizeof_gr_complex*1, 192000,True)
+
+        #self.blocks_multiply_const_vxx_0 = blocks.multiply_const_vff((100,))
         self.blocks_complex_to_real_0 = blocks.complex_to_real(1)
-        self.audio_sink_0 = audio.sink(self.sample_rate, '', True)
+        self.audio_sink_0 = audio.sink(48000, '', True)
+
 
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.blocks_complex_to_real_0, 0), (self.blocks_multiply_const_vxx_0, 0))
-        self.connect((self.blocks_multiply_const_vxx_0, 0), (self.audio_sink_0, 0))
-        self.connect((self.blocks_udp_source_0, 0), (self.blocks_complex_to_real_0, 0))
-        self.connect((self.blocks_udp_source_0, 0), (self.waterfallSink, 0))
+        self.connect((self.blocks_complex_to_real_0, 0), (self.audio_sink_0, 0))
+        self.connect((self.blocks_file_source_0, 0), (self.blocks_throttle_0, 0))
+        self.connect((self.blocks_throttle_0, 0), (self.blocks_complex_to_real_0, 0))
+        self.connect((self.blocks_throttle_0, 0), (self.waterfallSink, 0))
+
+        # self.connect((self.blocks_complex_to_real_0, 0), (self.blocks_multiply_const_vxx_0, 0))
+        # self.connect((self.blocks_multiply_const_vxx_0, 0), (self.audio_sink_0, 0))
+        # self.connect((self.blocks_udp_source_0, 0), (self.blocks_complex_to_real_0, 0))
+        # self.connect((self.blocks_udp_source_0, 0), (self.waterfallSink, 0))
 
     def get_samp_rate(self):
         return self.samp_rate
