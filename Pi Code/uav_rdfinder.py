@@ -64,18 +64,22 @@ class UAVRadioFinder(gr.top_block):
         self._connect_gr_blocks()
 
     def _create_gr_blocks(self, sample_rate):
-        self.rtlsdr_source_0 = osmosdr.source(args="numchan=" + str(1) + " " + "")
-        self.rtlsdr_source_0.set_sample_rate(sample_rate)
-        self.rtlsdr_source_0.set_center_freq(self._scan_frequency - self._freq_offset, 0)
-        self.rtlsdr_source_0.set_freq_corr(0, 0)
-        self.rtlsdr_source_0.set_dc_offset_mode(0, 0)
-        self.rtlsdr_source_0.set_iq_balance_mode(0, 0)
-        self.rtlsdr_source_0.set_gain_mode(False, 0)
-        self.rtlsdr_source_0.set_gain(self._gain, 0)
-        self.rtlsdr_source_0.set_if_gain(20, 0)
-        self.rtlsdr_source_0.set_bb_gain(20, 0)
-        self.rtlsdr_source_0.set_antenna("", 0)
-        self.rtlsdr_source_0.set_bandwidth(0, 0)
+        # self.rtlsdr_source_0 = osmosdr.source(args="numchan=" + str(1) + " " + "")
+        # self.rtlsdr_source_0.set_sample_rate(sample_rate)
+        # self.rtlsdr_source_0.set_center_freq(self._scan_frequency - self._freq_offset, 0)
+        # self.rtlsdr_source_0.set_freq_corr(0, 0)
+        # self.rtlsdr_source_0.set_dc_offset_mode(0, 0)
+        # self.rtlsdr_source_0.set_iq_balance_mode(0, 0)
+        # self.rtlsdr_source_0.set_gain_mode(False, 0)
+        # self.rtlsdr_source_0.set_gain(self._gain, 0)
+        # self.rtlsdr_source_0.set_if_gain(20, 0)
+        # self.rtlsdr_source_0.set_bb_gain(20, 0)
+        # self.rtlsdr_source_0.set_antenna("", 0)
+        # self.rtlsdr_source_0.set_bandwidth(0, 0)
+        self.file_source = blocks.file_source(
+            gr.sizeof_gr_complex*1,
+            "/home/seth/ZRC_RDF/Pi Code/Field Recordings/funcube_replacement",
+            True)
 
         self.fft_vxx_0 = fft.fft_vcc(512, True, (window.blackmanharris(512)), True, 1)
         self.blocks_vector_to_stream_0 = blocks.vector_to_stream(gr.sizeof_gr_complex * 1, 512)
@@ -103,7 +107,10 @@ class UAVRadioFinder(gr.top_block):
         self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 1))
         self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 2))
         self.connect((self.fft_vxx_0, 0), (self.blocks_multiply_xx_0, 3))
-        self.connect((self.rtlsdr_source_0, 0), (self.band_pass_filter_0, 0))
+
+        self.connect((self.file_source, 0), (self.band_pass_filter_0, 0))
+
+        #self.connect((self.rtlsdr_source_0, 0), (self.band_pass_filter_0, 0))
 
     def _on_scanning(self, msg):
         if msg is None:
@@ -342,7 +349,7 @@ class BarometerSensor(object):
 
 
 def main_loop():
-    config = {'port': '/dev/ttyAMA0',
+    config = {'port': '/dev/ttyUSB0',
               'baud': 57600,
               'timeout': 0.1}
     serial = SerialInterface(config)
