@@ -67,60 +67,73 @@ class MainWindow(wx.Frame):
         self.menuBar.Append(menu=self.fileMenu,
                             title='&File')
 
-        self.mainSizer = wx.BoxSizer(wx.VERTICAL)
+        self.mainSizer = wx.BoxSizer(wx.HORIZONTAL)
         self.childPanel.SetSizer(self.mainSizer)
 
         self.settingsDisplayPanel = SettingsDisplayPanel(parent=self.childPanel)
         self.compassPanel = CompassControl(parent=self.childPanel)
         self.statusDisplayPanel = StatusDisplayPanel(parent=self.childPanel)
-
-        self.topSizer = wx.BoxSizer(orient=wx.HORIZONTAL)
-        self.topSizer.Add(
-            item=self.settingsDisplayPanel,
-            proportion=3,
-            flag=wx.RIGHT | wx.EXPAND,
-            border=3)
-        self.topSizer.Add(
-            item=self.compassPanel,
-            proportion=5,
-            flag=wx.EXPAND)
-        self.topSizer.Add(
-            item=self.statusDisplayPanel,
-            proportion=3,
-            flag=wx.LEFT | wx.EXPAND,
-            border=3)
-        self.mainSizer.Add(
-            item=self.topSizer,
-            proportion=3,
-            flag=wx.LEFT | wx.TOP | wx.RIGHT | wx.EXPAND,
-            border=3)
-
         self.scanSettingsPanel = ScanSettingsPanel(parent=self.childPanel)
-
         self.scanResultsPanel = ScanResultsPanel(parent=self.childPanel)
-
         self.scanStartPanel = ScanStartPanel(parent=self.childPanel)
 
-        self.bottomSizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.bottomSizer.Add(
-            item=self.scanSettingsPanel,
-            proportion=3,
-            flag=wx.RIGHT | wx.EXPAND,
-            border=3)
-        self.bottomSizer.Add(
-            item=self.scanResultsPanel,
-            proportion=5,
-            flag=wx.EXPAND)
-        self.bottomSizer.Add(
-            item=self.scanStartPanel,
-            proportion=3,
-            flag=wx.LEFT | wx.EXPAND,
-            border=3)
+        self.leftSizer = wx.BoxSizer(orient=wx.VERTICAL)
+        self.centerSizer = wx.BoxSizer(orient=wx.VERTICAL)
+        self.rightSizer = wx.BoxSizer(orient=wx.VERTICAL)
 
         self.mainSizer.Add(
-            item=self.bottomSizer,
+            item=self.leftSizer,
             proportion=1,
-            flag=wx.ALL | wx.EXPAND,
+            flag=wx.LEFT | wx.TOP | wx.RIGHT | wx.EXPAND,
+            border=1)
+
+        self.mainSizer.Add(
+            item=self.centerSizer,
+            proportion=2,
+            flag=wx.LEFT | wx.TOP | wx.RIGHT | wx.EXPAND,
+            border=1)
+
+        self.mainSizer.Add(
+            item=self.rightSizer,
+            proportion=1,
+            flag=wx.LEFT | wx.TOP | wx.RIGHT | wx.EXPAND,
+            border=1)
+
+
+        self.leftSizer.Add(
+            item=self.settingsDisplayPanel,
+            proportion=2,
+            flag=wx.BOTTOM | wx.EXPAND,
+            border=1)
+
+        self.leftSizer.Add(
+            item=self.scanSettingsPanel,
+            proportion=1,
+            flag=wx.TOP | wx.EXPAND,
+            border=1)
+
+        self.centerSizer.Add(
+            item=self.compassPanel,
+            proportion=2,
+            flag=wx.BOTTOM | wx.EXPAND,
+            border=1)
+
+        self.centerSizer.Add(
+            item=self.scanResultsPanel,
+            proportion=1,
+            flag=wx.TOP | wx.EXPAND,
+            border=1)
+
+        self.rightSizer.Add(
+            item=self.statusDisplayPanel,
+            proportion=2,
+            flag=wx.BOTTOM | wx.EXPAND,
+            border=1)
+
+        self.rightSizer.Add(
+            item=self.scanStartPanel,
+            proportion=1,
+            flag=wx.TOP | wx.EXPAND,
             border=1)
 
     def OnClose(self, evt):
@@ -273,7 +286,7 @@ class ScanSettingsPanel(wx.Panel):
         self.SetBackgroundColour(COLORS['panelPrimary'])
 
         sizer = wx.BoxSizer(wx.VERTICAL)
-        self.SetSizer(sizer)
+        self.SetSizerAndFit(sizer)
 
         self.freqCtrl = NumTextCtrl(parent=self, label='Scan Frequency (MHz)')
         self.freqCtrl.numCtrl.SetMaxSize((100, 100))
@@ -323,30 +336,36 @@ class ScanResultsPanel(wx.Panel):
         super(ScanResultsPanel, self).__init__(*args, **kwargs)
         self.SetBackgroundColour(COLORS['panelPrimary'])
 
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.SetSizer(sizer)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+       # self.SetSizer(sizer)
+        self.SetSizerAndFit(
+            sizer
+        )
 
-        self.headingDisplay = DisplayControl(parent=self, label='Heading', unit=DEGREE_SIGN)
-        self.headingDisplay.SetValue(140.0)
-        self.magnitudeDisplay = DisplayControl(parent=self, label='Magnitude', unit=' dB')
-        self.magnitudeDisplay.SetValue(13.0)
-        self.freqDisplay = DisplayControl(parent=self, label='Frequency', unit=' MHz')
-        self.freqDisplay.SetValue(153.405)
+        # self.headingDisplay = DisplayControl(parent=self, label='Heading', unit=DEGREE_SIGN)
+        # self.headingDisplay.SetValue(140.0)
+        # self.magnitudeDisplay = DisplayControl(parent=self, label='Magnitude', unit=' dB')
+        # self.magnitudeDisplay.SetValue(13.0)
+        # self.freqDisplay = DisplayControl(parent=self, label='Frequency', unit=' MHz')
+        # self.freqDisplay.SetValue(153.405)
 
         self.waterfall = WaterfallPanel(parent=self)
 
+        sizer.Add(item=self.waterfall.panel, proportion=0,
+                  flag=wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL,
+                  border=5)
 
-        leftSizer = wx.BoxSizer(wx.VERTICAL)
-        leftSizer.Add(item=self.headingDisplay, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
-        leftSizer.Add(item=self.magnitudeDisplay, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
-        leftSizer.Add(item=self.freqDisplay, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
+        # leftSizer = wx.BoxSizer(wx.VERTICAL)
+        # leftSizer.Add(item=self.headingDisplay, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
+        # leftSizer.Add(item=self.magnitudeDisplay, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
+        # leftSizer.Add(item=self.freqDisplay, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
 
-        rightSizer = wx.BoxSizer(wx.HORIZONTAL)
-        rightSizer.Add(item=self.waterfall.panel, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
-
-        sizer.Add(item=leftSizer, proportion=1, flag=wx.ALL | wx.EXPAND, border=5)
-        #sizer.AddSpacer(item=(0, 0), proportion=1, flag=wx.ALL | wx.EXPAND, border=5)
-        sizer.Add(item=rightSizer, proportion=1, flag=wx.ALL | wx.EXPAND, border=5)
+        # rightSizer = wx.BoxSizer(wx.VERTICAL)
+        # rightSizer.Add(item=self.waterfall.panel, proportion=0, flag=wx.EXPAND | wx.ALL, border=5)
+        #
+        # # sizer.Add(item=leftSizer, proportion=1, flag=wx.ALL | wx.EXPAND, border=5)
+        # #sizer.AddSpacer(item=(0, 0), proportion=1, flag=wx.ALL | wx.EXPAND, border=5)
+        # sizer.Add(item=rightSizer, proportion=1, flag=wx.ALL | wx.EXPAND, border=5)
 
 
     def SetResults(self, heading, magnitude, frequency):
@@ -422,6 +441,7 @@ class WaterfallPanel(gr.top_block):
     def __init__(self, parent, *args, **kwargs):
         super(WaterfallPanel, self).__init__(*args, **kwargs)
         self.panel = wx.Panel(parent)
+
         self.sample_rate = 32000
         self.waterfallSink = waterfallsink2.waterfall_sink_c(
             self.panel,
@@ -438,26 +458,16 @@ class WaterfallPanel(gr.top_block):
         )
 
         self.blocks_udp_source_0 = blocks.udp_source(gr.sizeof_gr_complex * 1, '0.0.0.0', 1234, 1472, True)
-        #self.blocks_file_source_0 = blocks.file_source(gr.sizeof_gr_complex*1, "/home/seth/ZRC_RDF/Pi Code/Field Recordings/funcube_replacement", True)
-        self.blocks_throttle_0 = blocks.throttle(gr.sizeof_gr_complex*1, 192000,True)
+        self.blocks_throttle_0 = blocks.throttle(gr.sizeof_gr_complex*1, 192000, True)
 
-       # self.blocks_multiply_const_vxx_0 = blocks.multiply_const_vff((100,))
         self.blocks_complex_to_real_0 = blocks.complex_to_real(1)
         self.audio_sink_0 = audio.sink(48000, '', True)
-
 
         ##################################################
         # Connections
         ##################################################
-        #self.connect((self.blocks_complex_to_real_0, 0), (self.audio_sink_0, 0))
-        #self.connect((self.blocks_file_source_0, 0), (self.blocks_throttle_0, 0))
-        #self.connect((self.blocks_throttle_0, 0), (self.blocks_complex_to_real_0, 0))
-        #self.connect((self.blocks_throttle_0, 0), (self.waterfallSink, 0))
-
-        #self.connect((self.blocks_complex_to_real_0, 0), (self.blocks_multiply_const_vxx_0, 0))
-        #self.connect((self.blocks_multiply_const_vxx_0, 0), (self.audio_sink_0, 0))
-        self.connect((self.blocks_complex_to_real_0,0), (self.audio_sink_0,0))
-	self.connect((self.blocks_udp_source_0, 0), (self.blocks_complex_to_real_0, 0))
+        self.connect((self.blocks_complex_to_real_0, 0), (self.audio_sink_0,0))
+        self.connect((self.blocks_udp_source_0, 0), (self.blocks_complex_to_real_0, 0))
         self.connect((self.blocks_udp_source_0, 0), (self.waterfallSink, 0))
 
     def get_samp_rate(self):

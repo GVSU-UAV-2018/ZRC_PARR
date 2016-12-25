@@ -1,0 +1,27 @@
+<ReceiverParamsWidget>:
+    orientation: 'vertical'
+    Label:
+        canvas.after:
+            Color:
+                rgba: 0, 1, 0, 0.5
+            Rectangle:
+                size: self.size
+                pos: self.pos
+        text: 'Receiver Frequency'
+        pos_hint: {'top': 1}
+        halign: 'left'
+        valign: 'top'
+        color: 1, 0, 0, 1
+
+    Label:
+        canvas.after:
+            Color:
+                rgba: 0, 0, 1, 0.5
+            Rectangle:
+                size: self.size
+                pos: self.pos
+        text: 'Receiver Gain'
+        pos_hint: {'top': 1}
+        halign: 'left'
+        valign: 'top'
+        color: 1, 0, 0, 1

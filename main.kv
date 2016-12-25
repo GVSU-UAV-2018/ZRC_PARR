@@ -1,0 +1,20 @@
+<MainWidget>:
+    rows: 2
+    ActionBar:
+        pos_hint: {'top': 1}
+        ActionView:
+            use_separator: False
+            ActionPrevious:
+                with_previous: False
+            ActionOverflow:
+            ActionButton:
+                text: 'Settings'
+                pos_hint: {'left': 1}
+                on_release: app.open_settings()
+            ActionButton:
+                text: 'Exit'
+                pos_hint: {'left': 1}
+                on_release: root.exit()
+    BoxLayout:
+        orientation: 'horizontal'
+        ReceiverParamsWidget:

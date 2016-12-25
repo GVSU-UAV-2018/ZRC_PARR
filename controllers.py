@@ -15,6 +15,7 @@ class MainWindowController(object):
         self.mainWinView.Bind(event=wx.EVT_MENU,
                               handler=self.OnClose,
                               source=self.mainWinView.exitMenuItem)
+
         self.mainWinView.Bind(event=wx.EVT_CLOSE,
                               handler=self.OnClose)
 
