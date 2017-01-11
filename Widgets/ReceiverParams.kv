@@ -9,10 +9,11 @@
                 pos: self.pos
         text: 'Receiver Frequency'
         pos_hint: {'top': 1}
+        size_hint_y: 0.5
         halign: 'left'
         valign: 'top'
-        color: 1, 0, 0, 1
 
+        color: 1, 0, 0, 1
     Label:
         canvas.after:
             Color:
@@ -22,6 +23,8 @@
                 pos: self.pos
         text: 'Receiver Gain'
         pos_hint: {'top': 1}
+        size_hint_y: 0.5
+
         halign: 'left'
         valign: 'top'
         color: 1, 0, 0, 1

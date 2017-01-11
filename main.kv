@@ -1,5 +1,5 @@
 <MainWidget>:
-    rows: 2
+    rows: 3
     ActionBar:
         pos_hint: {'top': 1}
         ActionView:
@@ -18,3 +18,35 @@
     BoxLayout:
         orientation: 'horizontal'
         ReceiverParamsWidget:
+            size_hint_x: 0.25
+
+        Label:
+            text: 'test'
+            size_hint_x: 0.5
+            canvas.after:
+                Color:
+                    rgba: 0.5,0.5,0,0.5
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+        Label:
+            size_hint_x: 0.25
+            text: 'text test'
+    StackLayout:
+        orientation: 'lr-tb'
+        size: (root.width, 40)
+        size_hint: (None, None)
+        Label:
+            size_hint_x: 0.25
+            canvas.after:
+                Color:
+                    rgba:0.3,0.3,0.3,0.5
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+        Button:
+            id: start_btn
+            text: "Start"
+            background_color: [0,0,1,1]
+            foreground_color: [1,1,1,1]
+            size_hint_x: 0.5
