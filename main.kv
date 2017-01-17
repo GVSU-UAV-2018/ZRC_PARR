@@ -37,6 +37,7 @@
         size: (root.width, 40)
         size_hint: (None, None)
         Label:
+            id: label_one
             size_hint_x: 0.25
             canvas.after:
                 Color:
@@ -49,4 +50,16 @@
             text: "Start"
             background_color: [0,0,1,1]
             foreground_color: [1,1,1,1]
-            size_hint_x: 0.5
+            size_hint: (None, None)
+            size: (self.parent.width - (label_one.width * 2) - start_settings.width, self.parent.height)
+
+        Button:
+            id: start_settings
+            size: (40,40)
+            size_hint: (None, None)
+            on_press: root.on_start_settings_press()
+
+            Image:
+                source: 'Assets/Icons/cog_settings.png'
+                pos: self.parent.pos
+                size: self.parent.size

@@ -3,6 +3,7 @@ from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.settings import SettingsWithSidebar
+from kivy.uix.modalview import ModalView
 from settings_json import settings_json
 
 from Widgets import ReceiverParams
@@ -15,6 +16,10 @@ class MainWidget(GridLayout):
 
     def exit(self):
         App.get_running_app().stop()
+
+    def on_start_settings_press(self, *args):
+        view = ModalView(size_hint=(None, None), size=(400,400))
+        view.open()
 
 
 # class ReceiverParamsWidget(BoxLayout):
