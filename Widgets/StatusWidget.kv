@@ -1,0 +1,29 @@
+<StatusWidget>:
+    rows: 4
+
+    GridLayout:
+        cols: 2
+        Label:
+            size_hint: None, None
+            size: self.width, 40
+            id: altitude_lbl
+            text: 'Altitiude'
+            text_size: self.width, self.height
+            font_size: self.width / 10
+        Button:
+            size_hint: (None, None)
+            right: root.right
+            size: 40, 40
+            Image:
+                source: 'Assets/Icons/cog_settings.png'
+                pos: self.parent.pos
+                size: self.parent.size
+    Label:
+        canvas:
+            Rectangle:
+                size: self.size
+                pos: self.pos
+                Color:
+                    rgb: 1,0,0
+
+

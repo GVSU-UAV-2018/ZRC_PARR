@@ -4,9 +4,11 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.settings import SettingsWithSidebar
 from kivy.uix.modalview import ModalView
+from kivy.uix.relativelayout import RelativeLayout
 from settings_json import settings_json
 
 from Widgets import ReceiverParams
+from Widgets import StatusWidget
 
 
 
@@ -22,9 +24,6 @@ class MainWidget(GridLayout):
         view.open()
 
 
-# class ReceiverParamsWidget(BoxLayout):
-#     def __init__(self, **kwargs):
-#         super(ReceiverParamsWidget, self).__init__(**kwargs)
 
 
 class MainApp(App):
