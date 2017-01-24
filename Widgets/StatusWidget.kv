@@ -4,8 +4,6 @@
     GridLayout:
         cols: 2
         Label:
-            size_hint: None, None
-            size: self.width, 40
             id: altitude_lbl
             text: 'Altitiude'
             text_size: self.width, self.height
@@ -18,12 +16,28 @@
                 source: 'Assets/Icons/cog_settings.png'
                 pos: self.parent.pos
                 size: self.parent.size
-    Label:
-        canvas:
-            Rectangle:
-                size: self.size
-                pos: self.pos
-                Color:
-                    rgb: 1,0,0
+
+    GridLayout:
+        id: test_grid
+        cols: 2
+        size: self.size
+
+
+        Label:
+            halign: 'left'
+            id: heading_lbl
+            text: 'Heading'
+            size_hint: 0.33, 1
+            font_size: 20
+
+
+        Label:
+            id: heading_val
+            text: '30.00'
+            size_hint: 0.66, 1
+            font_size: 20
+
+
+
 
 

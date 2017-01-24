@@ -1,20 +1,28 @@
+
+<TopActionBar@ActionBar>
+    ActionView:
+        use_separator: False
+        ActionPrevious:
+            with_previous: False
+            size_hint_x: None
+        ActionButton
+            text: 'Settings'
+            halign: 'left'
+            size_hint_x: None
+            on_release: app.open_settings()
+
+<StatusDisplay@BoxLayout>
+    orientation: 'vertical'
+
+
+
 <MainWidget>:
     rows: 3
-    ActionBar:
-        pos_hint: {'top': 1}
-        ActionView:
-            use_separator: False
-            ActionPrevious:
-                with_previous: False
-            ActionOverflow:
-            ActionButton:
-                text: 'Settings'
-                pos_hint: {'left': 1}
-                on_release: app.open_settings()
-            ActionButton:
-                text: 'Exit'
-                pos_hint: {'left': 1}
-                on_release: root.exit()
+    TopActionBar:
+        valign: 'top'
+        height: 40
+        size_hint_y: None
+
     BoxLayout:
         orientation: 'horizontal'
         StatusWidget:
