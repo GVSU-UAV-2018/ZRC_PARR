@@ -24,8 +24,6 @@ class MainWidget(GridLayout):
         view.open()
 
 
-
-
 class MainApp(App):
     def build(self):
         self.use_kivy_settings = False
