@@ -4,9 +4,9 @@ import threading
 import serial
 from zlib import crc32
 from protocolwrapper import ProtocolWrapper, ProtocolStatus
-from construct import Struct, SLInt32, ULInt32, ULInt16, Flag, Embed, LFloat32, Container, Padding
+from construct import Struct, Int32sl, Int32ul, Int16ul, Flag, Embedded, Float32l, Container, Padding
 import time
-from pubsub import pub
+from pubsub import publish
 
 class SerialReadThread(threading.Thread):
     def __init__(self, in_q, serial_p):
@@ -221,11 +221,11 @@ class SerialInterface(SerialPort):
 
     @staticmethod
     def subscribe(msg_name, handler):
-        pub.subscribe(handler, msg_name)
+        publish.subscribe(handler, msg_name)
 
     @staticmethod
     def unsubscribe(msg_name, handler):
-        pub.unsubscribe(handler, msg_name)
+        publish.unsubscribe(handler, msg_name)
 
     def start(self):
         # Don't do anything after start called first time
@@ -252,7 +252,7 @@ class SerialInterface(SerialPort):
                 if msg is None:
                     time.sleep(0.05)
                 else:
-                    pub.sendMessage(MessageString[msg.msg_id], msg=msg)
+                    publish.sendMessage(MessageString[msg.msg_id], msg=msg)
                     self.in_q.task_done()
 
             except Queue.Empty:
@@ -263,39 +263,40 @@ PROTOCOL_HEADER = '\x11'
 PROTOCOL_FOOTER = '\x12'
 PROTOCOL_DLE = '\x90'
 
-msg_crc = Struct('msg_crc', SLInt32('crc'))
+msg_crc = Struct('crc' / Int16ul)
 
-msg_header = Struct('msg_header',
-                    ULInt16('msg_id')
+msg_header = Struct(
+                    'msg_id' / Int16ul
 )
 
-msg_scanning = Struct('msg_scanning',
-                      Embed(msg_header),
-                      Flag('scanning'),
+
+msg_scanning = Struct(
+                      Embedded(msg_header),
+                      'scanning' / Flag,
                       Padding(7),
-                      Embed(msg_crc)
+                      Embedded(msg_crc)
 )
 
-msg_scan_settings = Struct('msg_scan_settings',
-                           Embed(msg_header),
-                           LFloat32('gain'),
-                           LFloat32('scan_frequency'),
-                           LFloat32('snr_threshold'),
-                           Embed(msg_crc)
+msg_scan_settings = Struct(
+                           Embedded(msg_header),
+                           'gain' / Float32l,
+                           'scan_frequency' / Float32l,
+                           'snr_threshold' / Float32l,
+                           Embedded(msg_crc)
 )
 
-msg_attitude = Struct('msg_attitude',
-                      Embed(msg_header),
-                      LFloat32('altitude'),
-                      LFloat32('heading'),
-                      Embed(msg_crc)
+msg_attitude = Struct(
+                      Embedded(msg_header),
+                      'altitude' / Float32l,
+                      'heading' / Float32l,
+                      Embedded(msg_crc)
 )
 
-msg_detection = Struct('msg_detection',
-                       Embed(msg_header),
-                       LFloat32('magnitude'),
-                       LFloat32('heading'),
-                       Embed(msg_crc)
+msg_detection = Struct(
+                       Embedded(msg_header),
+                       'magnitude' / Float32l,
+                       'heading' / Float32l,
+                       Embedded(msg_crc)
 )
 
 
