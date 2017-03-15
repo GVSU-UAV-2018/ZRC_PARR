@@ -1,0 +1,7 @@
+<RCC>
+  <qresource prefix="Icons">
+    <file>Assets/Icons/check.png</file>
+    <file>Assets/Icons/cancel.png</file>
+    <file>Assets/Icons/cog_settings.png</file>
+  </qresource>
+</RCC>
