@@ -6,7 +6,27 @@ from zlib import crc32
 from protocolwrapper import ProtocolWrapper, ProtocolStatus
 from construct import Struct, Int32sl, Int32ul, Int16ul, Flag, Embedded, Float32l, Container, Padding
 import time
+
 from pubsub import publish
+
+
+class TimerThread(threading.Thread):
+    def __init__(self, event, func, interval=0.5):
+        super(TimerThread, self).__init__()
+        self.stopped = event
+        self.interval = interval
+        self.daemon = True
+
+        if callable(func):
+            self.func = func
+        else:
+            raise TypeError('Function provided must be callable')
+
+    def run(self):
+        while not self.stopped.wait(self.interval):
+            if self.func is not None:
+                self.func()
+
 
 class SerialReadThread(threading.Thread):
     def __init__(self, in_q, serial_p):

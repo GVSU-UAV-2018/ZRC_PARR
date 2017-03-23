@@ -3,24 +3,42 @@ from MainWindow import Ui_MainWindow
 from rdfinder import UAVRadioFinder
 from resources import qInitResources, qCleanupResources
 from PyQt5 import QtCore, QtGui, QtWidgets
+from threading import Event
+from zrc_core import TimerThread
+import usb.core
 
 
 class ZarrController(object):
     def __init__(self):
         self.main = Ui_MainWindow()
 
+        self.freqValCopy = None
+        self.snrValCopy = None
+        self.gainValCopy = None
+        self.scanTime = None
+        self.countdownTime = None
+        self.scanComplete = False
+        self.countdownComplete = False
+        self.scanning = False
 
-
+        self.updateThread = TimerThread(event=Event(), func=self.oneSecUpdate, interval=1.0)
 
     def start(self, window):
         self.main.setupUi(window)
         self.setup()
+        self.updateThread.start()
+
+    def oneSecUpdate(self):
+        self._updateScanTimer()
+
 
 
     def setup(self):
         self.freqValCopy = self.main.freqVal.text()
         self.snrValCopy = self.main.snrVal.text()
         self.gainValCopy = self.main.gainVal.text()
+        self.scanTime = float(self.main.scanTimeVal.text())
+        self.countdownTime = float(self.main.countdownVal.text())
 
         doubleValidator = QtGui.QDoubleValidator()
 
@@ -42,9 +60,14 @@ class ZarrController(object):
         self.main.snrOkBtn.clicked.connect(self.snrOkBtnClicked)
         self.main.snrCancelBtn.clicked.connect(self.snrCancelBtnClicked)
 
+        self.main.scanButton.clicked.connect(self.scanBtnClicked)
+
+
 
     def freqBtnClicked(self):
         self.main.freqVal.setReadOnly(False)
+        self.main.freqVal.selectAll()
+        self.main.freqVal.setFocus()
         self.main.freqStacked.setCurrentIndex(1)
         self.freqValCopy = self.main.freqVal.text()
 
@@ -58,8 +81,10 @@ class ZarrController(object):
         self.main.freqVal.setReadOnly(True)
 
     def gainBtnClicked(self):
-        self.main.snrVal.setReadOnly(False)
-        self.main.snrStacked.setCurrentIndex(1)
+        self.main.gainVal.setReadOnly(False)
+        self.main.gainVal.selectAll()
+        self.main.gainVal.setFocus()
+        self.main.gainStacked.setCurrentIndex(1)
         self.gainValCopy = self.main.gainVal.text()
 
     def gainOkBtnClicked(self):
@@ -73,6 +98,8 @@ class ZarrController(object):
 
     def snrBtnClicked(self):
         self.main.snrVal.setReadOnly(False)
+        self.main.snrVal.setFocus()
+        self.main.snrVal.selectAll()
         self.main.snrStacked.setCurrentIndex(1)
         self.snrValCopy = self.main.snrVal.text()
 
@@ -81,7 +108,7 @@ class ZarrController(object):
         self.main.snrVal.setReadOnly(True)
 
     def snrCancelBtnClicked(self):
-        self.main.snrVal.setText(self.freqValCopy)
+        self.main.snrVal.setText(self.snrValCopy)
         self.main.snrStacked.setCurrentIndex(0)
         self.main.snrVal.setReadOnly(True)
 
@@ -99,6 +126,31 @@ class ZarrController(object):
 
         return validate
 
+    def scanBtnClicked(self):
+        self.countdownComplete = False
+        self.scanComplete = False
+        self.scanning = not self.scanning
+        if self.scanning:
+            self.main.scanButton.setText('Stop')
+        else:
+            self.main.scanButton.setText('Scan')
+
+    def _updateScanTimer(self):
+        if self.scanning:
+            if self.countdownComplete:
+                self.scanTime -= 1
+
+                if self.scanTime <= 0:
+                    self.scanComplete = True
+                    self.scanTime = 0
+                self.main.scanTimeVal.setText(str(int(self.scanTime)))
+
+            else:
+                self.countdownTime -= 1
+                if self.countdownTime <= 0:
+                    self.countdownComplete = True
+                    self.countdownTime = 0
+                self.main.countdownVal.setText(str(int(self.countdownTime)))
 
 
 
