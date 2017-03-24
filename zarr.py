@@ -5,8 +5,10 @@ from resources import qInitResources, qCleanupResources
 from PyQt5 import QtCore, QtGui, QtWidgets
 from threading import Event
 from zrc_core import TimerThread
+from ConfigParser import ConfigParser
 import usb.core
 
+CONFIG_PATH = 'config.ini'
 
 class ZarrController(object):
     def __init__(self):
@@ -155,9 +157,35 @@ class ZarrController(object):
 
 
 
+def MapConfigSection(config, section):
+    dict1 = {}
+    options = config.options(section)
+    for option in options:
+        try:
+            dict1[option] = config.get(section, option)
+        except:
+            dict1[option] = None
+    return dict1
+
+
+def SaveConfig(config):
+    cfgfile = open(configPath, 'w')
+    # add the settings to the structure of the file, and lets write it out...
+    Config.write(cfgfile)
+    cfgfile.close()
+
+
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     window = QtWidgets.QMainWindow()
+
+    config = ConfigParser()
+    config.read(CONFIG_PATH)
+
+    telemConfig = MapConfigSection(config, 'Telemetry')
+    scanTimerConfig = MapConfigSection(config, 'ScanTimer')
+    receiverConfig = MapConfigSection(config, 'Receiver')
+
 
     zarr = ZarrController()
     zarr.start(window)
