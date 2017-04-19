@@ -204,7 +204,7 @@ class UAVRadioFinder(gr.top_block):
     def close(self):
         self._send_attitude_flag.clear()
         if self.serial is not None:
-            self.serial.Dispose()
+            self.serial.dispose()
 
         self._attitude_thread.join(timeout=0.1)
 

@@ -21,7 +21,7 @@ def main():
     except Exception as e:
         print e.message
 
-    port.Dispose()
+    port.dispose()
     print 'Closing  serial test'
 
 

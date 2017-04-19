@@ -7,7 +7,7 @@ from protocolwrapper import ProtocolWrapper, ProtocolStatus
 from construct import Struct, Int32sl, Int32ul, Int16ul, Flag, Embedded, Float32l, Container, Padding
 import time
 
-from pubsub import publish
+from pubsub import pub
 
 
 class TimerThread(threading.Thread):
@@ -118,6 +118,7 @@ class SerialWriteThread(threading.Thread):
 
 
 class SerialPort(object):
+    _setup = False
     def __init__(self, in_q=None, out_q=None, *args, **kwargs):
         self.in_q = in_q or Queue.Queue()
         self.out_q = out_q or Queue.Queue()
@@ -127,20 +128,32 @@ class SerialPort(object):
             dle=PROTOCOL_DLE
         )
 
-        port = kwargs.get('port', '/dev/ttyUSB0')
-        baud = kwargs.get('baud', 57600)
-        timeout = kwargs.get('timeout', 0.1)
+        self.port = None
+        self.baud = None
+        self.timeout = None
 
-        self.serial = serial.Serial(
-            port=port,
-            baudrate=baud,
-            stopbits=serial.STOPBITS_ONE,
-            bytesize=serial.EIGHTBITS,
-            timeout=timeout
-        )
 
-        self.receive_thread = SerialReadThread(self.in_q, self.serial)
-        self.send_thread = SerialWriteThread(self.out_q, self.serial)
+    def setup(self, port, baud, timeout):
+        self.port = port
+        self.baud = baud
+        self.timeout = timeout
+
+        try:
+            self.serial = serial.Serial(
+                port=port,
+                baudrate=baud,
+                stopbits=serial.STOPBITS_ONE,
+                bytesize=serial.EIGHTBITS,
+                timeout=timeout
+            )
+
+            self.receive_thread = SerialReadThread(self.in_q, self.serial)
+            self.send_thread = SerialWriteThread(self.out_q, self.serial)
+        except serial.SerialException as e:
+            return False
+
+        return True
+
 
     def start(self):
         self.receive_thread.start()
@@ -219,7 +232,7 @@ class SerialPort(object):
         packet = self.pwrap.wrap(fin_msg)
         self._put_message(packet)
 
-    def Dispose(self):
+    def dispose(self):
         if self.receive_thread.is_alive():
             self.receive_thread.join(timeout=0.2)
         if self.send_thread.is_alive():
@@ -228,10 +241,10 @@ class SerialPort(object):
 
 
 class SerialInterface(SerialPort):
-    def __init__(self, config):
+    def __init__(self):
         self.in_q = Queue.Queue()
         self.out_q = Queue.Queue()
-        super(SerialInterface, self).__init__(self.in_q, self.out_q, **config)
+        super(SerialInterface, self).__init__(self.in_q, self.out_q)
 
         self._poll = threading.Event()
         self._poll.clear()
@@ -241,11 +254,11 @@ class SerialInterface(SerialPort):
 
     @staticmethod
     def subscribe(msg_name, handler):
-        publish.subscribe(handler, msg_name)
+        pub.subscribe(handler, msg_name)
 
     @staticmethod
     def unsubscribe(msg_name, handler):
-        publish.unsubscribe(handler, msg_name)
+        pub.unsubscribe(handler, msg_name)
 
     def start(self):
         # Don't do anything after start called first time
@@ -255,11 +268,11 @@ class SerialInterface(SerialPort):
         super(SerialInterface, self).start()
         self.inbound_polling.start()
 
-    def Dispose(self):
+    def dispose(self):
         self._poll.clear()
         if self.inbound_polling.is_alive():
             self.inbound_polling.join(timeout=0.2)
-        super(SerialInterface, self).Dispose()
+        super(SerialInterface, self).dispose()
 
     def _receive(self):
         while self._poll.is_set():
@@ -272,7 +285,7 @@ class SerialInterface(SerialPort):
                 if msg is None:
                     time.sleep(0.05)
                 else:
-                    publish.sendMessage(MessageString[msg.msg_id], msg=msg)
+                    pub.sendMessage(MessageString[msg.msg_id], msg=msg)
                     self.in_q.task_done()
 
             except Queue.Empty:

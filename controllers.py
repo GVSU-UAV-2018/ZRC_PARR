@@ -185,7 +185,7 @@ class MainWindowController(object):
         if self.uavSeeker:
             self.uavSeeker.Dispose()
         if self.serial:
-            self.serial.Dispose()
+            self.serial.dispose()
 
         self.mainWinView.Destroy()
 

@@ -30,8 +30,8 @@ class UAVRadioFinder(object):
         self._heading = msg.heading
         self._altitude = msg.altitude
         print msg
-
     def OnDetectionReceived(self, msg):
+
         print msg
 
     def UpdateScanSettings(self, gain=None, freq=None, snr=None):

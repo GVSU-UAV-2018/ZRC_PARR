@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1330</width>
+    <width>1224</width>
     <height>770</height>
    </rect>
   </property>
@@ -195,7 +195,7 @@
                   <number>0</number>
                  </property>
                  <item>
-                  <widget class="QPushButton" name="frekOkBtn">
+                  <widget class="QPushButton" name="freqOkBtn">
                    <property name="text">
                     <string/>
                    </property>
@@ -511,7 +511,7 @@
                 </property>
                 <layout class="QVBoxLayout" name="gainCogLayout">
                  <item>
-                  <widget class="QPushButton" name="gainButton">
+                  <widget class="QPushButton" name="gainBtn">
                    <property name="minimumSize">
                     <size>
                      <width>10</width>
@@ -732,11 +732,11 @@
         <property name="frameShadow">
          <enum>QFrame::Sunken</enum>
         </property>
-        <layout class="QGridLayout" name="waterfallFrameLayout" rowstretch="1,0,0">
+        <layout class="QGridLayout" name="waterfallFrameLayout" rowstretch="0,10,0,0">
          <property name="margin">
           <number>4</number>
          </property>
-         <item row="2" column="0">
+         <item row="3" column="0">
           <layout class="QHBoxLayout" name="waterfallToolbar">
            <property name="leftMargin">
             <number>4</number>
@@ -782,22 +782,83 @@
            </item>
           </layout>
          </item>
-         <item row="1" column="0">
+         <item row="2" column="0">
           <widget class="Line" name="waterfallHLine">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
           </widget>
          </item>
-         <item row="0" column="0">
+         <item row="1" column="0">
           <widget class="QWidget" name="waterfall" native="true"/>
+         </item>
+         <item row="0" column="0">
+          <layout class="QHBoxLayout" name="connStatusLayout" stretch="0,0">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>0</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="connStatusBtn">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>33</width>
+               <height>33</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>33</width>
+               <height>33</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>:/Icons/Assets/Icons/connected</normaloff>:/Icons/Assets/Icons/connected</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>30</width>
+               <height>30</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
        </widget>
       </item>
       <item row="0" column="2">
-       <layout class="QGridLayout" name="centerLayout" rowstretch="20,0,0,0">
-        <item row="3" column="0">
+       <layout class="QGridLayout" name="centerLayout" rowstretch="0,20,0,0,0">
+        <item row="4" column="0">
          <layout class="QHBoxLayout" name="scanStartLayout">
           <property name="bottomMargin">
            <number>0</number>
@@ -823,7 +884,7 @@
           </item>
          </layout>
         </item>
-        <item row="2" column="0">
+        <item row="3" column="0">
          <layout class="QHBoxLayout" name="timeDispLayout">
           <item>
            <layout class="QGridLayout" name="countdownLayout">
@@ -900,14 +961,14 @@
           </item>
          </layout>
         </item>
-        <item row="1" column="0">
+        <item row="2" column="0">
          <widget class="Line" name="compassHLine">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
          </widget>
         </item>
-        <item row="0" column="0">
+        <item row="1" column="0">
          <widget class="QFrame" name="compass">
           <property name="frameShape">
            <enum>QFrame::StyledPanel</enum>
@@ -916,6 +977,83 @@
            <enum>QFrame::Raised</enum>
           </property>
          </widget>
+        </item>
+        <item row="0" column="0">
+         <layout class="QHBoxLayout" name="uavStatusLayout">
+          <item>
+           <layout class="QGridLayout" name="altitudeLayout">
+            <item row="0" column="0">
+             <widget class="QLabel" name="altitudeLbl">
+              <property name="font">
+               <font>
+                <pointsize>14</pointsize>
+                <italic>true</italic>
+               </font>
+              </property>
+              <property name="text">
+               <string>Altitude</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLabel" name="altitudeVal">
+              <property name="font">
+               <font>
+                <pointsize>14</pointsize>
+                <italic>true</italic>
+               </font>
+              </property>
+              <property name="text">
+               <string>5</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="Line" name="uavStatusVLine">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QGridLayout" name="headingLayout">
+            <item row="0" column="0">
+             <widget class="QLabel" name="headingLbl">
+              <property name="font">
+               <font>
+                <pointsize>14</pointsize>
+                <italic>true</italic>
+               </font>
+              </property>
+              <property name="text">
+               <string>Heading</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLabel" name="headingVal">
+              <property name="font">
+               <font>
+                <pointsize>14</pointsize>
+                <italic>true</italic>
+               </font>
+              </property>
+              <property name="text">
+               <string>45</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
         </item>
        </layout>
       </item>
@@ -942,7 +1080,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1330</width>
+     <width>1224</width>
      <height>28</height>
     </rect>
    </property>
