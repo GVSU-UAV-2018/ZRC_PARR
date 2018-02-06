@@ -1,4 +1,4 @@
-# Install script for directory: /home/pi/RDF System/gr-collar_detect
+# Install script for directory: /home/pi/ZRC_RDF/Pi Code/gr-collar_detect
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -33,18 +33,18 @@ if(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
 endif()
 
 if(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified")
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/cmake/collar_detect" TYPE FILE FILES "/home/pi/RDF System/gr-collar_detect/cmake/Modules/collar_detectConfig.cmake")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/cmake/collar_detect" TYPE FILE FILES "/home/pi/ZRC_RDF/Pi Code/gr-collar_detect/cmake/Modules/collar_detectConfig.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/pi/RDF System/gr-collar_detect/build/include/collar_detect/cmake_install.cmake")
-  include("/home/pi/RDF System/gr-collar_detect/build/lib/cmake_install.cmake")
-  include("/home/pi/RDF System/gr-collar_detect/build/swig/cmake_install.cmake")
-  include("/home/pi/RDF System/gr-collar_detect/build/python/cmake_install.cmake")
-  include("/home/pi/RDF System/gr-collar_detect/build/grc/cmake_install.cmake")
-  include("/home/pi/RDF System/gr-collar_detect/build/apps/cmake_install.cmake")
-  include("/home/pi/RDF System/gr-collar_detect/build/docs/cmake_install.cmake")
+  include("/home/pi/ZRC_RDF/Pi Code/gr-collar_detect/build/include/collar_detect/cmake_install.cmake")
+  include("/home/pi/ZRC_RDF/Pi Code/gr-collar_detect/build/lib/cmake_install.cmake")
+  include("/home/pi/ZRC_RDF/Pi Code/gr-collar_detect/build/swig/cmake_install.cmake")
+  include("/home/pi/ZRC_RDF/Pi Code/gr-collar_detect/build/python/cmake_install.cmake")
+  include("/home/pi/ZRC_RDF/Pi Code/gr-collar_detect/build/grc/cmake_install.cmake")
+  include("/home/pi/ZRC_RDF/Pi Code/gr-collar_detect/build/apps/cmake_install.cmake")
+  include("/home/pi/ZRC_RDF/Pi Code/gr-collar_detect/build/docs/cmake_install.cmake")
 
 endif()
 
@@ -54,7 +54,7 @@ else()
   set(CMAKE_INSTALL_MANIFEST "install_manifest.txt")
 endif()
 
-file(WRITE "/home/pi/RDF System/gr-collar_detect/build/${CMAKE_INSTALL_MANIFEST}" "")
+file(WRITE "/home/pi/ZRC_RDF/Pi Code/gr-collar_detect/build/${CMAKE_INSTALL_MANIFEST}" "")
 foreach(file ${CMAKE_INSTALL_MANIFEST_FILES})
-  file(APPEND "/home/pi/RDF System/gr-collar_detect/build/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
+  file(APPEND "/home/pi/ZRC_RDF/Pi Code/gr-collar_detect/build/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
 endforeach()

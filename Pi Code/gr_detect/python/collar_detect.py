@@ -30,8 +30,8 @@ prev_time = 0.0
 collar_offset = 3000
 sample_freq_decim = 16000.0
 collar_bandwidth = 1000.0
-max_bin = int(((collar_offset + collar_bandwidth / 2.0) / sample_freq_decim) * 512.0)
-min_bin = int(((collar_offset - collar_bandwidth / 2.0) / sample_freq_decim) * 512.0)
+#max_bin = int(((collar_offset + collar_bandwidth / 2.0) / sample_freq_decim) * 512.0)
+#min_bin = int(((collar_offset - collar_bandwidth / 2.0) / sample_freq_decim) * 512.0)
 
 
 class collar_detect(gr.sync_block):
@@ -44,11 +44,12 @@ class collar_detect(gr.sync_block):
                                name="collar_detect",
                                in_sig=[(numpy.float32, 512)],
                                out_sig=None)
+        self.snr_threshold = 6.0
 
     def work(self, input_items, output_items):
         global var_avg
-        global min_bin
-        global max_bin
+        #global min_bin
+        #global max_bin
         global i
         global var_avg_temp
         in0 = input_items[0]
@@ -76,7 +77,7 @@ class collar_detect(gr.sync_block):
             var_avg_temp = []
             i = 0
 
-        if noise_mean > 6.0 * var_avg:
+        if noise_mean > self.snr_threshold * var_avg:
             detected_pulse = noise_mean / var_avg
             pub.sendMessage('detection', arg1=detected_pulse)
             # print numpy.max(noise_norm)

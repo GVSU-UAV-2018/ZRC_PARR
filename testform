@@ -1,0 +1,127 @@
+import wx
+###############################################################################
+class CustomNumbers(wx.Dialog):
+    """ Dialog for choosing custom numbers """
+    def __init__(self, *args, **kwargs):
+        super(CustomNumbers, self).__init__(*args, **kwargs)
+        self.SetBackgroundColour("WHITE")
+        self.widget_dict = {}
+
+        self.initUI()
+        self.SetSizerAndFit(self.main_sizer)
+
+        self.Layout()
+        self.Refresh()
+
+    # --------------------------------------------------------------------------
+    def initUI(self):
+        """ """
+        self.createSizer()
+        self.createText()
+        self.createInputBox()
+        self.createButton()
+        self.addSizerContent()
+
+    # --------------------------------------------------------------------------
+    def createSizer(self):
+        self.main_sizer = wx.BoxSizer(wx.VERTICAL)
+
+    # --------------------------------------------------------------------------
+    def createText(self):
+        """ """
+        low_num_text = wx.StaticText(self, -1, "Low Number")
+        high_num_text = wx.StaticText(self, -1, "High Number")
+
+        self.widget_dict["low_num_text"] = low_num_text
+        self.widget_dict["high_num_text"] = high_num_text
+
+    # --------------------------------------------------------------------------
+    def createInputBox(self):
+        """ """
+        low_input = wx.TextCtrl(self, validator=CustomNumValidator(),
+                                name="low_input")
+        high_input = wx.TextCtrl(self, validator=CustomNumValidator(),
+                                 name="high_input")
+        self.widget_dict["low_input"] = low_input
+        self.widget_dict["high_input"] = high_input
+
+    # --------------------------------------------------------------------------
+    def createButton(self):
+        """ """
+        ok_btn = wx.Button(self, wx.ID_OK, "Enter")
+        cancel_btn = wx.Button(self, wx.ID_CANCEL, "Cancel")
+
+        self.widget_dict["ok_btn"] = ok_btn
+        self.widget_dict["cancel_btn"] = cancel_btn
+
+    # --------------------------------------------------------------------------
+    def addSizerContent(self):
+        """ """
+        top_sizer = wx.BoxSizer()
+        top_sizer.Add(self.widget_dict["low_num_text"], 3, wx.ALL, 10)
+        top_sizer.Add(self.widget_dict["low_input"], 7, wx.ALL ^ wx.RIGHT, 10)
+
+        btm_sizer = wx.BoxSizer()
+        btm_sizer.Add(self.widget_dict["high_num_text"], 3, wx.ALL, 10)
+        btm_sizer.Add(self.widget_dict["high_input"], 7, wx.ALL, 10)
+
+        btn_sizer = wx.BoxSizer()
+        btn_sizer.Add(self.widget_dict["ok_btn"], 0, wx.CENTER | wx.ALL, 10)
+        btn_sizer.Add(self.widget_dict["cancel_btn"], 0,
+                      wx.CENTER | wx.ALL, 10)
+
+        self.main_sizer.Add(top_sizer)
+        self.main_sizer.Add(btm_sizer)
+        self.main_sizer.Add(btn_sizer, 0, wx.CENTER | wx.ALL, 10)
+
+    # --------------------------------------------------------------------------
+    def getValues(self):
+        """ """
+        low = self.widget_dict["low_input"].GetValue()
+        high = self.widget_dict["high_input"].GetValue()
+        return (int(low), int(high))
+
+
+###############################################################################
+class CustomNumValidator(wx.PyValidator):
+    """ Validator for entering custom low and high limits """
+    def __init__(self):
+        super(CustomNumValidator, self).__init__()
+
+    # --------------------------------------------------------------------------
+    def Clone(self):
+        """ """
+        return CustomNumValidator()
+
+    # --------------------------------------------------------------------------
+    def Validate(self, win):
+        """ """
+        textCtrl = self.GetWindow()
+        text = textCtrl.GetValue()
+
+        if text.isdigit():
+            return True
+        else:
+            wx.MessageBox("Please enter numbers only", "Invalid Input",
+            wx.OK | wx.ICON_ERROR)
+        return False
+
+    # --------------------------------------------------------------------------
+    def TransferToWindow(self):
+        return True
+
+    # --------------------------------------------------------------------------
+    def TransferFromWindow(self):
+        return True
+
+
+if __name__ == "__main__":
+    app = wx.App()
+    dlg = CustomNumbers(None, -1, "Custom Numbers")
+    if dlg.ShowModal() == wx.ID_OK:
+        print("YES")
+        dlg.getValues()
+    else:
+        print("wOW YOU SUCK")
+    dlg.Destroy()
+    app.MainLoop()

@@ -13,16 +13,17 @@ PROTOCOL_DLE = '\x90'
 
 # configure the serial connections (the parameters differs on the device you are connecting to)
 ser = serial.Serial(
-    port='COM10',
+    port='/dev/ttyAMA0',
     baudrate=57600,
     stopbits=serial.STOPBITS_ONE,
     bytesize=serial.EIGHTBITS,
-    timeout = None
+    timeout=None
 )
 
 closing = False
 
 ser.isOpen()
+
 
 def send_serial(direction, data_type, data, scanning):
     """ Given the data, builds a message for
@@ -38,8 +39,8 @@ def send_serial(direction, data_type, data, scanning):
         direction=direction,
         data_type=data_type,
         data=data,
-        scanning = scanning,
-        crc = 0))
+        scanning=scanning,
+        crc=0))
 
     # Compute the CRC field and append it to the
     # message instead of the empty CRC specified
@@ -53,23 +54,22 @@ def send_serial(direction, data_type, data, scanning):
     msg = msg_without_crc + msg_crc
 
     pw = ProtocolWrapper(
-            header=PROTOCOL_HEADER,
-            footer=PROTOCOL_FOOTER,
-            dle=PROTOCOL_DLE)
-
+        header=PROTOCOL_HEADER,
+        footer=PROTOCOL_FOOTER,
+        dle=PROTOCOL_DLE)
 
     ser.write(pw.wrap(msg))
 
-def receive_serial(panel):
-    # Sample: receiving a message
-    #
-    ser.isOpen()
-    pw = ProtocolWrapper(
-            header=PROTOCOL_HEADER,
-            footer=PROTOCOL_FOOTER,
-            dle=PROTOCOL_DLE)
-    msg = ''
 
+def receive_serial(): # Sample: receiving a message
+    ser.isOpen()
+
+    pw = ProtocolWrapper(
+        header=PROTOCOL_HEADER,
+        footer=PROTOCOL_FOOTER,
+        dle=PROTOCOL_DLE)
+    msg = ''
+    
     while closing == False:
         byte = ser.read()
         status = map(pw.input, byte)
@@ -86,11 +86,16 @@ def receive_serial(panel):
                     print 'Error: CRC mismatch'
                 else:
                     rcvd_msg = message_format.parse(rec_msg)
-                    #print "Data Received"
-                    panel.update_onreceive(rcvd_msg)
+                    print "Data Received"
+                    panel.update_on_receive(rcvd_msg)
                 msg = ''
-        except:
-            pass
+        except Exception as ex:
+            import sys
+
+            print str(ex)
+            print "Unexpected error:", sys.exc_info()[0]
+            raise
+
 
 def ser_close():
     closing = True

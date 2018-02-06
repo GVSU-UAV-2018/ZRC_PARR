@@ -1,4 +1,0 @@
-/home/pi/RDF System/gr-collar_detect/build/docs/doxygen/CMakeFiles/doxygen_target.dir
-/home/pi/RDF System/gr-collar_detect/build/apps/CMakeFiles/pygen_apps_9a6dd.dir
-/home/pi/RDF System/gr-collar_detect/build/python/CMakeFiles/pygen_python_68fff.dir
-/home/pi/RDF System/gr-collar_detect/build/CMakeFiles/uninstall.dir

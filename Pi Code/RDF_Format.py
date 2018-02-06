@@ -14,6 +14,9 @@ message_format = Struct('message_format',
         SETTINGS = 0x22,
         _default_ = 0x00
     ),
+    # Doesn't matter!
+    # Array Structure
+    # [Frequency, Heading/Bearing, Altitude]
     Array(3, LFloat32('data')),
     Bit('scanning'),
     Embed(message_crc)
